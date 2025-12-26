@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -14,8 +14,16 @@ export function GrainAnalyzer() {
   const [grainType, setGrainType] = useState<GrainType>('Rice');
   const [measurementState, setMeasurementState] = useState<MeasurementState>('idle');
   const [moisture, setMoisture] = useState<number | null>(null);
+  
+  // Avoid hydration mismatch for Math.random()
+  const [isClient, setIsClient] = useState(false);
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const handleMeasure = () => {
+    if (!isClient) return;
+
     setMeasurementState('measuring');
     setMoisture(null);
     setTimeout(() => {
@@ -107,7 +115,7 @@ export function GrainAnalyzer() {
       <CardFooter className="pt-6">
         <Button
           onClick={handleMeasure}
-          disabled={measurementState === 'measuring'}
+          disabled={measurementState === 'measuring' || !isClient}
           className="w-full text-lg py-6"
           size="lg"
         >

@@ -1,5 +1,5 @@
 import { GrainAnalyzer } from './components/grain-analyzer';
-import { CalibrationTool } from './components/calibration-tool';
+import { SensorControlPanel } from './components/sensor-control-panel';
 import { GrainScanLogo } from '@/components/icons';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -19,12 +19,12 @@ export default function Home() {
 
       <main className="flex-1">
         <div className="container py-8 md:py-12">
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="md:col-span-2">
               <GrainAnalyzer />
             </div>
-            <div className="md:col-span-3">
-              <CalibrationTool />
+            <div className="md:col-span-1">
+              <SensorControlPanel />
             </div>
           </div>
         </div>
