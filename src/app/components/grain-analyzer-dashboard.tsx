@@ -5,10 +5,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { WheatIcon, RiceIcon, MaizeIcon, LoadingSpinner } from '@/components/icons';
 import { cn } from '@/lib/utils';
-import { CheckCircle2, Info, XCircle, Wifi, Cpu, AreaChart } from 'lucide-react';
+import { CheckCircle2, Info, XCircle, Wifi, Cpu, Thermometer, Clock } from 'lucide-react';
+import { TemperatureForecastChart, type DailyForecast } from './temperature-forecast-chart';
+import { generateTemperatureForecast } from '@/lib/weather-forecast';
+import { getHarvestAdvice } from '@/ai/flows/get-harvest-advice';
+import { useToast } from '@/hooks/use-toast';
 
 type GrainType = 'Rice' | 'Wheat' | 'Maize';
 type MeasurementState = 'idle' | 'measuring' | 'done';
+type Measurement = {
+  grain: GrainType;
+  moisture: number;
+  timestamp: Date;
+};
 
 const grains = [
   { name: 'Rice', icon: RiceIcon },
@@ -20,32 +29,85 @@ export function GrainAnalyzerDashboard() {
   const [selectedGrain, setSelectedGrain] = useState<GrainType>('Wheat');
   const [measurementState, setMeasurementState] = useState<MeasurementState>('idle');
   const [moisture, setMoisture] = useState<number | null>(null);
-
   const [isClient, setIsClient] = useState(false);
+  const [measurementLogs, setMeasurementLogs] = useState<string[]>([]);
+  const [measurementHistory, setMeasurementHistory] = useState<Measurement[]>([]);
+  const [forecast, setForecast] = useState<DailyForecast[]>([]);
+  const [advisorStatus, setAdvisorStatus] = useState<'idle' | 'loading' | 'done'>('idle');
+  const [advice, setAdvice] = useState<{ status: 'good' | 'caution' | 'bad'; title: string; suggestion: string; }>({ status: 'caution', title: 'Awaiting results', suggestion: 'Complete a measurement to get advice.' });
+  const { toast } = useToast();
+
   useEffect(() => {
     setIsClient(true);
+    setForecast(generateTemperatureForecast());
   }, []);
+
+  useEffect(() => {
+    if (measurementState === 'done' && moisture !== null) {
+      const fetchAdvice = async () => {
+        setAdvisorStatus('loading');
+        try {
+          const result = await getHarvestAdvice({
+            grainType: selectedGrain,
+            moistureContent: moisture,
+            temperatureForecast: forecast,
+          });
+          setAdvice(result);
+        } catch (error) {
+          console.error("Error fetching harvest advice:", error);
+          setAdvice({
+            status: 'bad',
+            title: 'Error',
+            suggestion: 'Could not retrieve AI-powered harvest advice.'
+          });
+          toast({
+            variant: "destructive",
+            title: "AI Advisor Error",
+            description: "There was an issue connecting to the harvest advisor service.",
+          });
+        } finally {
+          setAdvisorStatus('done');
+        }
+      };
+      fetchAdvice();
+    }
+  }, [measurementState, moisture, selectedGrain, forecast, toast]);
+
 
   const handleMeasure = () => {
     if (!isClient) return;
 
     setMeasurementState('measuring');
     setMoisture(null);
+    setMeasurementLogs(['[0s] Starting measurement cycle...']);
+    setAdvisorStatus('idle');
+
+
+    const interval = setInterval(() => {
+      setMeasurementLogs(prev => [...prev, `[${prev.length}s] Analyzing grain sample...`]);
+    }, 1000);
+
     setTimeout(() => {
+      clearInterval(interval);
       const baseMoisture = selectedGrain === 'Rice' ? 12 : selectedGrain === 'Wheat' ? 14 : 18;
       const randomMoisture = baseMoisture + (Math.random() - 0.5) * 4;
-      setMoisture(parseFloat(randomMoisture.toFixed(1)));
+      const finalMoisture = parseFloat(randomMoisture.toFixed(1));
+      
+      setMoisture(finalMoisture);
       setMeasurementState('done');
-    }, 2000);
+      const newMeasurement = { grain: selectedGrain, moisture: finalMoisture, timestamp: new Date() };
+      setMeasurementHistory(prev => [newMeasurement, ...prev]);
+      setMeasurementLogs(prev => [...prev, `[${prev.length}s] Measurement complete. Result: ${finalMoisture}%`]);
+    }, 5000);
   };
   
   const handleSelectGrain = (grain: GrainType) => {
     setSelectedGrain(grain);
     setMeasurementState('idle');
     setMoisture(null);
+    setMeasurementLogs([]);
+    setAdvisorStatus('idle');
   }
-  
-  const { status, title, suggestion } = useMemo(() => getAdvice(moisture, selectedGrain), [moisture, selectedGrain]);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -92,16 +154,13 @@ export function GrainAnalyzerDashboard() {
           </CardContent>
         </Card>
         
-        <Card className="min-h-[280px]">
+        <Card>
            <CardHeader>
-              <CardTitle>Measurement History</CardTitle>
-              <CardDescription>Visualizing recent moisture readings.</CardDescription>
+              <CardTitle>7-Day Temperature Forecast</CardTitle>
+              <CardDescription>Predicted temperature trends for harvest planning.</CardDescription>
             </CardHeader>
-            <CardContent className="flex items-center justify-center text-muted-foreground">
-                <div className='text-center'>
-                    <AreaChart className='h-16 w-16 mx-auto text-gray-300'/>
-                    <p className='mt-4 text-sm'>Chart data will be displayed here.</p>
-                </div>
+            <CardContent>
+                {isClient ? <TemperatureForecastChart data={forecast} /> : <div className="h-[250px] w-full flex items-center justify-center text-muted-foreground">Loading chart...</div>}
             </CardContent>
         </Card>
       </div>
@@ -112,7 +171,7 @@ export function GrainAnalyzerDashboard() {
           <CardHeader>
             <CardTitle>Live Reading</CardTitle>
           </CardHeader>
-          <CardContent className="flex-grow flex flex-col items-center justify-center text-center p-6">
+          <CardContent className="flex-grow flex flex-col items-center justify-center text-center p-6 min-h-[240px]">
             {measurementState === 'idle' && (
               <div className="text-muted-foreground">
                 <p className="font-medium">Ready to measure</p>
@@ -138,21 +197,44 @@ export function GrainAnalyzerDashboard() {
           </CardContent>
         </Card>
         
-        {measurementState === 'done' && (
-            <HarvestAdvisorCard status={status} title={title} suggestion={suggestion} />
-        )}
+        <HarvestAdvisorCard status={advisorStatus === 'loading' ? 'loading' : advice.status} title={advice.title} suggestion={advice.suggestion} />
 
         <Card>
-            <CardHeader className='pb-2'>
-                <CardTitle>Device Status</CardTitle>
-            </CardHeader>
-            <CardContent>
-                <div className='flex items-center text-green-600 font-semibold'>
-                    <Wifi className="h-5 w-5 mr-2" />
-                    <span>Hardware Connected</span>
+          <CardHeader>
+            <CardTitle>Measurement History</CardTitle>
+            <CardDescription>Recent readings and live logs.</CardDescription>
+          </CardHeader>
+          <CardContent className="max-h-64 overflow-y-auto text-sm">
+            {measurementState === 'measuring' ? (
+                <div className='font-mono text-xs'>
+                  {measurementLogs.map((log, i) => <p key={i}>{log}</p>)}
                 </div>
-                <p className='text-xs text-muted-foreground mt-1'>Receiving data from GrainScan-A1 unit.</p>
-            </CardContent>
+            ) : measurementHistory.length > 0 ? (
+              <ul className='space-y-3'>
+                {measurementHistory.map((m, i) => (
+                  <li key={i} className='flex justify-between items-center'>
+                    <div className='flex items-center gap-3'>
+                      {m.grain === 'Wheat' && <WheatIcon className='h-5 w-5 text-muted-foreground'/>}
+                      {m.grain === 'Rice' && <RiceIcon className='h-5 w-5 text-muted-foreground'/>}
+                      {m.grain === 'Maize' && <MaizeIcon className='h-5 w-5 text-muted-foreground'/>}
+                      <div>
+                        <span className='font-semibold'>{m.grain} - {m.moisture}%</span>
+                        <p className='text-muted-foreground text-xs'>
+                          {m.timestamp.toLocaleTimeString()}
+                        </p>
+                      </div>
+                    </div>
+                     <span className='text-muted-foreground text-xs'>{m.timestamp.toLocaleDateString()}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="text-center text-muted-foreground py-8">
+                <Clock className="h-8 w-8 mx-auto text-gray-300" />
+                <p className="mt-2">No measurements recorded yet.</p>
+              </div>
+            )}
+          </CardContent>
         </Card>
       </div>
     </div>
@@ -160,8 +242,11 @@ export function GrainAnalyzerDashboard() {
 }
 
 
-const HarvestAdvisorCard = ({ status, title, suggestion }: ReturnType<typeof getAdvice>) => {
+const HarvestAdvisorCard = ({ status, title, suggestion }: { status: 'good' | 'caution' | 'bad' | 'loading', title: string, suggestion: string }) => {
     const renderIcon = () => {
+    if (status === 'loading') {
+      return <LoadingSpinner className='h-10 w-10 text-primary' />;
+    }
     switch (status) {
       case 'good':
         return <CheckCircle2 className="h-10 w-10 text-green-500" />;
@@ -181,9 +266,9 @@ const HarvestAdvisorCard = ({ status, title, suggestion }: ReturnType<typeof get
              <div className="flex items-start gap-4">
                 {renderIcon()}
                 <div className="text-left flex-1">
-                  <p className="text-lg font-bold text-foreground">{title}</p>
+                  <p className="text-lg font-bold text-foreground">{status === 'loading' ? 'Analyzing...' : title}</p>
                   <p className="text-sm text-muted-foreground">
-                    {suggestion}
+                    {status === 'loading' ? 'Generating AI-powered harvest advice...' : suggestion}
                   </p>
                 </div>
             </div>
@@ -191,61 +276,3 @@ const HarvestAdvisorCard = ({ status, title, suggestion }: ReturnType<typeof get
     </Card>
   )
 }
-
-function getAdvice(moistureLevel: number | null, grainType: GrainType) {
-    let status: 'good' | 'caution' | 'bad' = 'caution';
-    let title = '';
-    let suggestion = '';
-
-    if (moistureLevel === null) {
-        return {status: 'caution', title: 'Awaiting results', suggestion: 'Measurement has not been completed yet.'}
-    }
-
-    if (grainType === 'Wheat') {
-      if (moistureLevel < 13.5) {
-        status = 'good';
-        title = 'Good to Harvest';
-        suggestion = 'Moisture level is ideal. Proceed with harvesting to ensure optimal quality and storage life.';
-      } else if (moistureLevel <= 15.5) {
-        status = 'caution';
-        title = 'Harvest with Caution';
-        suggestion = 'Moisture is slightly high. Consider drying the grain after harvest to prevent spoilage.';
-      } else {
-        status = 'bad';
-        title = 'Not Ready for Harvest';
-        suggestion = 'Moisture level is too high. Delay harvesting and allow the grain to dry further in the field.';
-      }
-    }
-     if (grainType === 'Rice') {
-      if (moistureLevel < 14) {
-        status = 'good';
-        title = 'Optimal for Harvest';
-        suggestion = 'Excellent moisture level. Harvesting now will yield high-quality grains ready for storage.';
-      } else if (moistureLevel <= 16) {
-        status = 'caution';
-        title = 'Monitor Closely';
-        suggestion = 'Moisture is adequate, but drying may be needed post-harvest to avoid mold.';
-      } else {
-        status = 'bad';
-        title = 'Delay Harvest';
-        suggestion = 'Moisture is too high for rice. Wait for more drying in the field to prevent spoilage.';
-      }
-    }
-     if (grainType === 'Maize') {
-      if (moistureLevel < 15.5) {
-        status = 'good';
-        title = 'Ready to Harvest';
-        suggestion = 'Ideal moisture content for maize. Proceed with harvesting for best results.';
-      } else if (moistureLevel <= 18) {
-        status = 'caution';
-        title = 'Caution Advised';
-        suggestion = 'Slightly high moisture. Be prepared for post-harvest drying to ensure long-term storage.';
-      } else {
-        status = 'bad';
-        title = 'Harvest Not Recommended';
-        suggestion = 'High moisture content poses a risk of spoilage. Let the maize dry longer in the field.';
-      }
-    }
-
-    return { status, title, suggestion };
-  };
