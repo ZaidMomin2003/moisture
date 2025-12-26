@@ -3,6 +3,7 @@ import { SensorControlPanel } from './components/sensor-control-panel';
 import { GrainScanLogo } from '@/components/icons';
 import { HarvestAdvisor } from './components/harvest-advisor';
 import { DeviceConnection } from './components/device-connection';
+import { HardwareIntegrationGuide } from './components/hardware-integration-guide';
 
 export default function Home() {
   return (
@@ -29,6 +30,9 @@ export default function Home() {
               <SensorControlPanel />
               <HarvestAdvisor />
             </div>
+          </div>
+          <div className="mt-8">
+            <HardwareIntegrationGuide />
           </div>
         </div>
       </main>
