@@ -2,7 +2,7 @@
 
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { ChartTooltipContent } from "@/components/ui/chart"
+import { ChartContainer, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
 
 export type DailyForecast = {
   day: string;
@@ -14,11 +14,24 @@ interface TemperatureForecastChartProps {
   data: DailyForecast[];
 }
 
+const chartConfig = {
+  high: {
+    label: "High",
+    color: "#ef4444",
+  },
+  low: {
+    label: "Low",
+    color: "#3b82f6",
+  },
+} satisfies ChartConfig;
+
+
 export function TemperatureForecastChart({ data }: TemperatureForecastChartProps) {
   return (
     <div className="h-[250px] w-full">
-      <ResponsiveContainer width="100%" height="100%">
+       <ChartContainer config={chartConfig} className="w-full h-full">
         <AreaChart
+          accessibilityLayer
           data={data}
           margin={{
             top: 5,
@@ -43,18 +56,18 @@ export function TemperatureForecastChart({ data }: TemperatureForecastChartProps
           />
           <defs>
             <linearGradient id="colorHigh" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#ef4444" stopOpacity={0.8}/>
-              <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
+              <stop offset="5%" stopColor="var(--color-high)" stopOpacity={0.8}/>
+              <stop offset="95%" stopColor="var(--color-high)" stopOpacity={0}/>
             </linearGradient>
             <linearGradient id="colorLow" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
-              <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+              <stop offset="5%" stopColor="var(--color-low)" stopOpacity={0.8}/>
+              <stop offset="95%" stopColor="var(--color-low)" stopOpacity={0}/>
             </linearGradient>
           </defs>
-          <Area type="monotone" dataKey="high" name="High" stroke="#ef4444" fillOpacity={1} fill="url(#colorHigh)" />
-          <Area type="monotone" dataKey="low" name="Low" stroke="#3b82f6" fillOpacity={1} fill="url(#colorLow)" />
+          <Area type="monotone" dataKey="high" name="High" stroke="var(--color-high)" fillOpacity={1} fill="url(#colorHigh)" />
+          <Area type="monotone" dataKey="low" name="Low" stroke="var(--color-low)" fillOpacity={1} fill="url(#colorLow)" />
         </AreaChart>
-      </ResponsiveContainer>
+      </ChartContainer>
     </div>
   )
 }
