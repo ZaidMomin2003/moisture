@@ -2,6 +2,7 @@ import { GrainAnalyzer } from './components/grain-analyzer';
 import { SensorControlPanel } from './components/sensor-control-panel';
 import { GrainScanLogo } from '@/components/icons';
 import { HarvestAdvisor } from './components/harvest-advisor';
+import { DeviceConnection } from './components/device-connection';
 
 export default function Home() {
   return (
@@ -24,6 +25,7 @@ export default function Home() {
               <GrainAnalyzer />
             </div>
             <div className="md:col-span-1 space-y-8">
+              <DeviceConnection />
               <SensorControlPanel />
               <HarvestAdvisor />
             </div>
