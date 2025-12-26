@@ -1,15 +1,13 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { WheatIcon, RiceIcon, MaizeIcon, LoadingSpinner } from '@/components/icons';
 import { cn } from '@/lib/utils';
-import { CheckCircle2, Info, XCircle, Wifi, Cpu, Thermometer, Clock } from 'lucide-react';
+import { CheckCircle2, Info, XCircle, Cpu, Clock } from 'lucide-react';
 import { TemperatureForecastChart, type DailyForecast } from './temperature-forecast-chart';
 import { generateTemperatureForecast } from '@/lib/weather-forecast';
-import { getHarvestAdvice } from '@/ai/flows/get-harvest-advice';
-import { useToast } from '@/hooks/use-toast';
 
 type GrainType = 'Rice' | 'Wheat' | 'Maize';
 type MeasurementState = 'idle' | 'measuring' | 'done';
@@ -18,12 +16,44 @@ type Measurement = {
   moisture: number;
   timestamp: Date;
 };
+type Advice = {
+  status: 'good' | 'caution' | 'bad';
+  title: string;
+  suggestion: string;
+};
 
 const grains = [
   { name: 'Rice', icon: RiceIcon },
   { name: 'Wheat', icon: WheatIcon },
   { name: 'Maize', icon: MaizeIcon },
 ] as const;
+
+// Hardcoded logic for harvest advice
+const getHardcodedHarvestAdvice = (grainType: GrainType, moisture: number): Advice => {
+  const idealMoisture = { Wheat: 13.5, Rice: 14, Maize: 15.5 };
+  const acceptableMoisture = { Wheat: 15.5, Rice: 16, Maize: 18 };
+
+  if (moisture <= idealMoisture[grainType]) {
+    return {
+      status: 'good',
+      title: 'Good to Harvest',
+      suggestion: `Moisture is at an ideal level for ${grainType}. Excellent conditions for harvesting and storage.`,
+    };
+  } else if (moisture <= acceptableMoisture[grainType]) {
+    return {
+      status: 'caution',
+      title: 'Harvest with Caution',
+      suggestion: `Moisture is slightly high. The grain may require drying after harvest to prevent spoilage.`,
+    };
+  } else {
+    return {
+      status: 'bad',
+      title: 'Not Recommended',
+      suggestion: `High moisture content detected. Harvesting now poses a high risk of spoilage. Wait for drier conditions.`,
+    };
+  }
+};
+
 
 export function GrainAnalyzerDashboard() {
   const [selectedGrain, setSelectedGrain] = useState<GrainType>('Wheat');
@@ -34,9 +64,8 @@ export function GrainAnalyzerDashboard() {
   const [measurementHistory, setMeasurementHistory] = useState<Measurement[]>([]);
   const [forecast, setForecast] = useState<DailyForecast[]>([]);
   const [advisorStatus, setAdvisorStatus] = useState<'idle' | 'loading' | 'done'>('idle');
-  const [advice, setAdvice] = useState<{ status: 'good' | 'caution' | 'bad'; title: string; suggestion: string; }>({ status: 'caution', title: 'Awaiting results', suggestion: 'Complete a measurement to get advice.' });
-  const { toast } = useToast();
-
+  const [advice, setAdvice] = useState<Advice>({ status: 'caution', title: 'Awaiting results', suggestion: 'Complete a measurement to get advice.' });
+  
   useEffect(() => {
     setIsClient(true);
     setForecast(generateTemperatureForecast());
@@ -44,34 +73,15 @@ export function GrainAnalyzerDashboard() {
 
   useEffect(() => {
     if (measurementState === 'done' && moisture !== null) {
-      const fetchAdvice = async () => {
-        setAdvisorStatus('loading');
-        try {
-          const result = await getHarvestAdvice({
-            grainType: selectedGrain,
-            moistureContent: moisture,
-            temperatureForecast: forecast,
-          });
-          setAdvice(result);
-        } catch (error) {
-          console.error("Error fetching harvest advice:", error);
-          setAdvice({
-            status: 'bad',
-            title: 'Error',
-            suggestion: 'Could not retrieve AI-powered harvest advice.'
-          });
-          toast({
-            variant: "destructive",
-            title: "AI Advisor Error",
-            description: "There was an issue connecting to the harvest advisor service.",
-          });
-        } finally {
-          setAdvisorStatus('done');
-        }
-      };
-      fetchAdvice();
+      setAdvisorStatus('loading');
+      // Simulate a short delay for fetching advice
+      setTimeout(() => {
+        const result = getHardcodedHarvestAdvice(selectedGrain, moisture);
+        setAdvice(result);
+        setAdvisorStatus('done');
+      }, 500);
     }
-  }, [measurementState, moisture, selectedGrain, forecast, toast]);
+  }, [measurementState, moisture, selectedGrain]);
 
 
   const handleMeasure = () => {
@@ -81,7 +91,7 @@ export function GrainAnalyzerDashboard() {
     setMoisture(null);
     setMeasurementLogs(['[0s] Starting measurement cycle...']);
     setAdvisorStatus('idle');
-
+    setAdvice({ status: 'caution', title: 'Awaiting results', suggestion: 'Complete a measurement to get advice.' });
 
     const interval = setInterval(() => {
       setMeasurementLogs(prev => [...prev, `[${prev.length}s] Analyzing grain sample...`]);
@@ -107,6 +117,7 @@ export function GrainAnalyzerDashboard() {
     setMoisture(null);
     setMeasurementLogs([]);
     setAdvisorStatus('idle');
+    setAdvice({ status: 'caution', title: 'Awaiting results', suggestion: 'Complete a measurement to get advice.' });
   }
 
   return (
@@ -268,7 +279,7 @@ const HarvestAdvisorCard = ({ status, title, suggestion }: { status: 'good' | 'c
                 <div className="text-left flex-1">
                   <p className="text-lg font-bold text-foreground">{status === 'loading' ? 'Analyzing...' : title}</p>
                   <p className="text-sm text-muted-foreground">
-                    {status === 'loading' ? 'Generating AI-powered harvest advice...' : suggestion}
+                    {status === 'loading' ? 'Generating harvest advice...' : suggestion}
                   </p>
                 </div>
             </div>
