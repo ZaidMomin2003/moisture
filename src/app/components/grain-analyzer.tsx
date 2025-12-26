@@ -107,7 +107,7 @@ export function GrainAnalyzer() {
           </TabsList>
         </Tabs>
 
-        <div className="flex-grow h-64 bg-muted/40 dark:bg-muted/20 rounded-lg flex items-center justify-center p-4">
+        <div className="flex-grow h-48 bg-muted/40 dark:bg-muted/20 rounded-lg flex items-center justify-center p-4">
           {renderDisplayContent()}
         </div>
       </CardContent>

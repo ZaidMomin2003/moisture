@@ -4,6 +4,7 @@ import { GrainScanLogo } from '@/components/icons';
 import { HarvestAdvisor } from './components/harvest-advisor';
 import { DeviceConnection } from './components/device-connection';
 import { HardwareIntegrationGuide } from './components/hardware-integration-guide';
+import { CameraView } from './components/camera-view';
 
 export default function Home() {
   return (
@@ -27,6 +28,7 @@ export default function Home() {
             </div>
             <div className="md:col-span-1 space-y-8">
               <DeviceConnection />
+              <CameraView />
               <SensorControlPanel />
               <HarvestAdvisor />
             </div>
