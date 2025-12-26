@@ -1,7 +1,7 @@
 import { GrainAnalyzer } from './components/grain-analyzer';
 import { SensorControlPanel } from './components/sensor-control-panel';
 import { GrainScanLogo } from '@/components/icons';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { HarvestAdvisor } from './components/harvest-advisor';
 
 export default function Home() {
   return (
@@ -23,8 +23,9 @@ export default function Home() {
             <div className="md:col-span-2">
               <GrainAnalyzer />
             </div>
-            <div className="md:col-span-1">
+            <div className="md:col-span-1 space-y-8">
               <SensorControlPanel />
+              <HarvestAdvisor />
             </div>
           </div>
         </div>
