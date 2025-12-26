@@ -28,7 +28,6 @@ const grains = [
   { name: 'Maize', icon: MaizeIcon },
 ] as const;
 
-// Hardcoded logic for harvest advice
 const getHardcodedHarvestAdvice = (grainType: GrainType, moisture: number): Advice => {
   const idealMoisture = { Wheat: 13.5, Rice: 14, Maize: 15.5 };
   const acceptableMoisture = { Wheat: 15.5, Rice: 16, Maize: 18 };
@@ -43,7 +42,7 @@ const getHardcodedHarvestAdvice = (grainType: GrainType, moisture: number): Advi
     return {
       status: 'caution',
       title: 'Harvest with Caution',
-      suggestion: `Moisture is slightly high. The grain may require drying after harvest to prevent spoilage.`,
+      suggestion: `The grain may require drying after harvest to prevent spoilage.`,
     };
   } else {
     return {
@@ -74,7 +73,6 @@ export function GrainAnalyzerDashboard() {
   useEffect(() => {
     if (measurementState === 'done' && moisture !== null) {
       setAdvisorStatus('loading');
-      // Simulate a short delay for fetching advice
       setTimeout(() => {
         const result = getHardcodedHarvestAdvice(selectedGrain, moisture);
         setAdvice(result);
@@ -122,7 +120,6 @@ export function GrainAnalyzerDashboard() {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      {/* Left Column */}
       <div className="lg:col-span-2 flex flex-col gap-6">
         <Card>
            <CardHeader>
@@ -176,7 +173,6 @@ export function GrainAnalyzerDashboard() {
         </Card>
       </div>
 
-      {/* Right Column */}
       <div className="flex flex-col gap-6">
          <Card className="flex flex-col">
           <CardHeader>
