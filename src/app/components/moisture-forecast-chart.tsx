@@ -1,6 +1,7 @@
+
 "use client"
 
-import { Line, LineChart, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts"
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis, Tooltip } from "recharts"
 import { ChartContainer, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
 
 export type DailyMoistureForecast = {
@@ -20,7 +21,7 @@ const chartConfig = {
   },
   low: {
     label: "Low",
-    color: "hsl(var(--primary) / 0.5)",
+    color: "hsl(var(--primary) / 0.1)",
   }
 } satisfies ChartConfig;
 
@@ -29,7 +30,7 @@ export function MoistureForecastChart({ data }: MoistureForecastChartProps) {
   return (
     <div className="h-[250px] w-full">
        <ChartContainer config={chartConfig} className="w-full h-full">
-        <LineChart
+        <AreaChart
           accessibilityLayer
           data={data}
           margin={{
@@ -53,26 +54,38 @@ export function MoistureForecastChart({ data }: MoistureForecastChartProps) {
                 )}
             />}
           />
-          <Line 
+          <defs>
+            <linearGradient id="colorHigh" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="var(--color-high)" stopOpacity={0.8}/>
+              <stop offset="95%" stopColor="var(--color-high)" stopOpacity={0}/>
+            </linearGradient>
+             <linearGradient id="colorLow" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="var(--color-low)" stopOpacity={0.4}/>
+              <stop offset="95%" stopColor="var(--color-low)" stopOpacity={0}/>
+            </linearGradient>
+          </defs>
+          <Area 
             type="monotone" 
             dataKey="high" 
             stroke="var(--color-high)" 
             strokeWidth={2}
-            dot={false}
+            fillOpacity={1}
+            fill="url(#colorHigh)"
             isAnimationActive={true}
-            name="high"
+            name="High"
           />
-          <Line 
-            type="monotone" 
-            dataKey="low" 
-            stroke="var(--color-low)" 
-            strokeWidth={2}
+          <Area
+            type="monotone"
+            dataKey="low"
+            stroke="var(--color-high)"
+            strokeWidth={1}
             strokeDasharray="4 4"
-            dot={false}
+            fillOpacity={1}
+            fill="url(#colorLow)"
             isAnimationActive={true}
-            name="low"
+            name="Low"
           />
-        </LineChart>
+        </AreaChart>
       </ChartContainer>
     </div>
   )
