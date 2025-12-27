@@ -11,7 +11,7 @@ const harvestAdvisorFlow = ai.defineFlow(
   },
   async (input) => {
     const { output } = await ai.generate({
-      model: 'googleai/gemini-1.5-flash-latest',
+      model: 'googleai/gemini-2.5-pro',
       prompt: `
         You are an expert agronomist and farm advisor.
         Your task is to provide clear, actionable advice to a farmer about whether to harvest their grain based on its moisture content.
