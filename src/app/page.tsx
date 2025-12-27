@@ -1,5 +1,6 @@
 import { GrainAnalyzerDashboard } from './components/grain-analyzer-dashboard';
 import { GrainScanLogo } from '@/components/icons';
+import Link from 'next/link';
 
 export default function Home() {
   return (
@@ -12,6 +13,10 @@ export default function Home() {
               GrainScan Dashboard
             </span>
           </div>
+           <nav className="flex items-center gap-4">
+              <Link href="/" className="text-sm font-medium text-primary hover:underline">Dashboard</Link>
+              <Link href="/hardware" className="text-sm font-medium text-muted-foreground hover:underline">Hardware</Link>
+            </nav>
         </div>
       </header>
 
