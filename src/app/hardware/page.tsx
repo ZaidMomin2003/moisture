@@ -213,7 +213,7 @@ export default function HardwarePage() {
                                             <h3 className="font-semibold text-lg">Option 3: LoRaWAN for Agriculture</h3>
                                             <p className="text-muted-foreground text-sm">LoRaWAN is a wireless protocol designed for long-range, low-power communication, perfect for large farms.
                                             <br /> The data pipeline is more complex: <br />
-                                            <span className="font-mono text-xs">Sensor -> LoRaWAN Node -> Gateway -> Network Server (e.g., The Things Network) -> Firebase -> Your App</span>
+                                            <span className="font-mono text-xs">Sensor -&gt; LoRaWAN Node -&gt; Gateway -&gt; Network Server (e.g., The Things Network) -&gt; Firebase -&gt; Your App</span>
                                              <br /> <span className="font-semibold text-sky-600">This is a professional-grade solution for wide-area IoT deployments. The web app code does not need to change.</span>
                                             </p>
                                         </div>
@@ -253,5 +253,7 @@ export default function HardwarePage() {
     );
 }
 
+
+    
 
     
