@@ -17,11 +17,11 @@ interface MoistureForecastChartProps {
 const chartConfig = {
   high: {
     label: "High",
-    color: "hsl(var(--primary))",
+    color: "hsl(var(--destructive))",
   },
   low: {
     label: "Low",
-    color: "hsl(var(--primary) / 0.1)",
+    color: "hsl(var(--primary))",
   }
 } satisfies ChartConfig;
 
@@ -77,7 +77,7 @@ export function MoistureForecastChart({ data }: MoistureForecastChartProps) {
           <Area
             type="monotone"
             dataKey="low"
-            stroke="var(--color-high)"
+            stroke="var(--color-low)"
             strokeWidth={1}
             strokeDasharray="4 4"
             fillOpacity={1}
