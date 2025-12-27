@@ -1,9 +1,11 @@
 'use server';
 import { ai } from '@/ai/genkit';
+import { googleAI } from '@genkit-ai/google-genai';
 import { HarvestAdviceInputSchema, HarvestAdviceSchema, type HarvestAdvice, type HarvestAdviceInput } from './harvest-advisor-shared';
 
 const harvestAdvisorPrompt = ai.definePrompt({
   name: 'harvestAdvisorPrompt',
+  model: googleAI.model('gemini-1.5-flash-latest'),
   input: { schema: HarvestAdviceInputSchema },
   output: { schema: HarvestAdviceSchema },
   prompt: `
