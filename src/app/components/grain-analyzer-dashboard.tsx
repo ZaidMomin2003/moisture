@@ -4,10 +4,12 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { WheatIcon, RiceIcon, MaizeIcon, LoadingSpinner } from '@/components/icons';
 import { cn } from '@/lib/utils';
-import { CheckCircle2, Info, XCircle, Clock } from 'lucide-react';
+import { CheckCircle2, Info, XCircle } from 'lucide-react';
 import { TemperatureForecastChart, type DailyForecast } from './temperature-forecast-chart';
 import { generateTemperatureForecast } from '@/lib/weather-forecast';
 import { RealTimeMoistureChart, type MoistureReading } from './real-time-moisture-chart';
+import { getHarvestAdvice, type HarvestAdvice } from '@/ai/flows/harvest-advisor-flow';
+import { useToast } from '@/hooks/use-toast';
 
 export type GrainType = 'Rice' | 'Wheat' | 'Maize';
 export type MeasurementState = 'idle' | 'measuring' | 'done';
@@ -18,11 +20,6 @@ type Measurement = {
   moisture: number;
   timestamp: Date;
 };
-type Advice = {
-  status: 'good' | 'caution' | 'bad';
-  title: string;
-  suggestion: string;
-};
 
 const grains = [
   { name: 'Rice', icon: RiceIcon },
@@ -30,33 +27,7 @@ const grains = [
   { name: 'Maize', icon: MaizeIcon },
 ] as const;
 
-const getHardcodedHarvestAdvice = (grainType: GrainType, moisture: number): Advice => {
-  const idealMoisture = { Wheat: 13.5, Rice: 14, Maize: 15.5 };
-  const acceptableMoisture = { Wheat: 15.5, Rice: 16, Maize: 18 };
-
-  if (moisture <= idealMoisture[grainType]) {
-    return {
-      status: 'good',
-      title: 'Good to Harvest',
-      suggestion: `Moisture is at an ideal level for ${grainType}. Excellent conditions for harvesting and storage.`,
-    };
-  } else if (moisture <= acceptableMoisture[grainType]) {
-    return {
-      status: 'caution',
-      title: 'Harvest with Caution',
-      suggestion: `The grain may require drying after harvest to prevent spoilage.`,
-    };
-  } else {
-    return {
-      status: 'bad',
-      title: 'Not Recommended',
-      suggestion: `High moisture content detected. Harvesting now poses a high risk of spoilage. Wait for drier conditions.`,
-    };
-  }
-};
-
-
-export function GrainAnalyzerDashboard({ deviceStatus, measurementState, handleMeasure }: { deviceStatus: DeviceStatus, measurementState: MeasurementState, handleMeasure: () => void }) {
+export function GrainAnalyzerDashboard({ deviceStatus, measurementState }: { deviceStatus: DeviceStatus, measurementState: MeasurementState }) {
   const [selectedGrain, setSelectedGrain] = useState<GrainType>('Wheat');
   const [moisture, setMoisture] = useState<number | null>(null);
   const [isClient, setIsClient] = useState(false);
@@ -64,8 +35,9 @@ export function GrainAnalyzerDashboard({ deviceStatus, measurementState, handleM
   const [liveLogs, setLiveLogs] = useState<Measurement[]>([]);
   const [forecast, setForecast] = useState<DailyForecast[]>([]);
   const [advisorStatus, setAdvisorStatus] = useState<'idle' | 'loading' | 'done'>('idle');
-  const [advice, setAdvice] = useState<Advice>({ status: 'caution', title: 'Awaiting results', suggestion: 'Complete a measurement to get advice.' });
+  const [advice, setAdvice] = useState<HarvestAdvice>({ status: 'caution', title: 'Awaiting results', suggestion: 'Complete a measurement to get advice.' });
   const [liveMoistureData, setLiveMoistureData] = useState<MoistureReading[]>([]);
+  const { toast } = useToast();
   
   useEffect(() => {
     setIsClient(true);
@@ -73,15 +45,33 @@ export function GrainAnalyzerDashboard({ deviceStatus, measurementState, handleM
   }, []);
 
   useEffect(() => {
-    if (measurementState === 'done' && moisture !== null) {
-      setAdvisorStatus('loading');
-      setTimeout(() => {
-        const result = getHardcodedHarvestAdvice(selectedGrain, moisture);
-        setAdvice(result);
-        setAdvisorStatus('done');
-      }, 500);
-    }
-  }, [measurementState, moisture, selectedGrain]);
+    const fetchAdvice = async () => {
+      if (measurementState === 'done' && moisture !== null) {
+        setAdvisorStatus('loading');
+        try {
+          const result = await getHarvestAdvice({ grainType: selectedGrain, moisture });
+          setAdvice(result);
+        } catch (error) {
+          console.error("Error fetching harvest advice:", error);
+          toast({
+            variant: "destructive",
+            title: "AI Advisor Error",
+            description: "There was an issue connecting to the harvest advisor service.",
+          });
+          // Fallback to a default error state for the card
+          setAdvice({
+            status: 'bad',
+            title: 'Error',
+            suggestion: 'Could not retrieve AI-powered harvest advice.'
+          });
+        } finally {
+          setAdvisorStatus('done');
+        }
+      }
+    };
+    fetchAdvice();
+  }, [measurementState, moisture, selectedGrain, toast]);
+
 
   useEffect(() => {
      if (measurementState === 'measuring') {
@@ -101,16 +91,16 @@ export function GrainAnalyzerDashboard({ deviceStatus, measurementState, handleM
           const newMoisture = baseMoisture + trend + randomFluctuation;
           const reading = { time, moisture: parseFloat(newMoisture.toFixed(1)) };
           
-          setLiveMoistureData(prev => [...prev.slice(-29), reading]); // keep last 30 points
+          setLiveMoistureData(prev => [...prev.slice(-29), reading]);
           setMoisture(reading.moisture);
 
           const newLog = { grain: selectedGrain, moisture: reading.moisture, timestamp: new Date() };
           setLiveLogs(prev => [newLog, ...prev]);
 
-          if (time >= 10) { // Stop after 10 seconds
+          if (time >= 10) { 
             clearInterval(interval);
-            setPastMeasurements(prev => [newLog, ...prev]);
-            // This relies on parent component to set measurementState to 'done'
+            const finalMeasurement = { grain: selectedGrain, moisture: reading.moisture, timestamp: new Date() };
+            setPastMeasurements(prev => [finalMeasurement, ...prev]);
           }
         }, 1000);
 
@@ -127,8 +117,6 @@ export function GrainAnalyzerDashboard({ deviceStatus, measurementState, handleM
     setAdvisorStatus('idle');
     setAdvice({ status: 'caution', title: 'Awaiting results', suggestion: 'Complete a measurement to get advice.' });
   }
-
-  const measurementHistory = measurementState === 'measuring' ? liveLogs : pastMeasurements;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
