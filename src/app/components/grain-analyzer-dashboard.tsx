@@ -5,9 +5,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { WheatIcon, RiceIcon, MaizeIcon, LoadingSpinner } from '@/components/icons';
 import { cn } from '@/lib/utils';
-import { CheckCircle2, Info, XCircle, Cpu, Clock, Wifi, WifiOff, Check } from 'lucide-react';
+import { CheckCircle2, Info, XCircle, Cpu, Clock, Wifi, WifiOff } from 'lucide-react';
 import { TemperatureForecastChart, type DailyForecast } from './temperature-forecast-chart';
 import { generateTemperatureForecast } from '@/lib/weather-forecast';
+import { RealTimeMoistureChart, type MoistureReading } from './real-time-moisture-chart';
 
 type GrainType = 'Rice' | 'Wheat' | 'Maize';
 type MeasurementState = 'idle' | 'measuring' | 'done';
@@ -60,12 +61,12 @@ export function GrainAnalyzerDashboard() {
   const [measurementState, setMeasurementState] = useState<MeasurementState>('idle');
   const [moisture, setMoisture] = useState<number | null>(null);
   const [isClient, setIsClient] = useState(false);
-  const [measurementLogs, setMeasurementLogs] = useState<string[]>([]);
   const [measurementHistory, setMeasurementHistory] = useState<Measurement[]>([]);
   const [forecast, setForecast] = useState<DailyForecast[]>([]);
   const [advisorStatus, setAdvisorStatus] = useState<'idle' | 'loading' | 'done'>('idle');
   const [advice, setAdvice] = useState<Advice>({ status: 'caution', title: 'Awaiting results', suggestion: 'Complete a measurement to get advice.' });
   const [deviceStatus, setDeviceStatus] = useState<DeviceStatus>('disconnected');
+  const [liveMoistureData, setLiveMoistureData] = useState<MoistureReading[]>([]);
   
   useEffect(() => {
     setIsClient(true);
@@ -89,33 +90,37 @@ export function GrainAnalyzerDashboard() {
 
     setMeasurementState('measuring');
     setMoisture(null);
-    setMeasurementLogs(['[0s] Starting measurement cycle...']);
+    setLiveMoistureData([]);
     setAdvisorStatus('idle');
     setAdvice({ status: 'caution', title: 'Awaiting results', suggestion: 'Complete a measurement to get advice.' });
 
+    let time = 0;
+    const baseMoisture = selectedGrain === 'Rice' ? 12 : selectedGrain === 'Wheat' ? 14 : 18;
+    
     const interval = setInterval(() => {
-      setMeasurementLogs(prev => [...prev, `[${prev.length}s] Reading sensor value from device...`]);
-    }, 1000);
-
-    setTimeout(() => {
-      clearInterval(interval);
-      const baseMoisture = selectedGrain === 'Rice' ? 12 : selectedGrain === 'Wheat' ? 14 : 18;
-      const randomMoisture = baseMoisture + (Math.random() - 0.5) * 4;
-      const finalMoisture = parseFloat(randomMoisture.toFixed(1));
+      time++;
+      const randomFluctuation = (Math.random() - 0.5) * 0.4;
+      const trend = Math.sin(time / 3) * 0.5; // slow sine wave for a trend
+      const newMoisture = baseMoisture + trend + randomFluctuation;
+      const reading = { time, moisture: parseFloat(newMoisture.toFixed(1)) };
       
-      setMoisture(finalMoisture);
-      setMeasurementState('done');
-      const newMeasurement = { grain: selectedGrain, moisture: finalMoisture, timestamp: new Date() };
-      setMeasurementHistory(prev => [newMeasurement, ...prev]);
-      setMeasurementLogs(prev => [...prev, `[${prev.length}s] Measurement complete. Result: ${finalMoisture}%`]);
-    }, 5000);
+      setLiveMoistureData(prev => [...prev.slice(-29), reading]); // keep last 30 points
+      setMoisture(reading.moisture);
+
+      if (time >= 10) { // Stop after 10 seconds
+        clearInterval(interval);
+        setMeasurementState('done');
+        const newMeasurement = { grain: selectedGrain, moisture: reading.moisture, timestamp: new Date() };
+        setMeasurementHistory(prev => [newMeasurement, ...prev]);
+      }
+    }, 1000);
   };
   
   const handleSelectGrain = (grain: GrainType) => {
     setSelectedGrain(grain);
     setMeasurementState('idle');
     setMoisture(null);
-    setMeasurementLogs([]);
+    setLiveMoistureData([]);
     setAdvisorStatus('idle');
     setAdvice({ status: 'caution', title: 'Awaiting results', suggestion: 'Complete a measurement to get advice.' });
   }
@@ -187,28 +192,27 @@ export function GrainAnalyzerDashboard() {
           <CardHeader>
             <CardTitle>Live Reading</CardTitle>
           </CardHeader>
-          <CardContent className="flex-grow flex flex-col items-center justify-center text-center p-6 min-h-[190px]">
+          <CardContent className="flex-grow flex flex-col items-center justify-center p-6 min-h-[250px]">
             {measurementState === 'idle' && (
-              <div className="text-muted-foreground">
+              <div className="text-muted-foreground text-center">
                 <p className="font-medium">Ready to measure</p>
                 <p className='text-sm'>Connect to device and press "Measure".</p>
               </div>
             )}
-            {measurementState === 'measuring' && (
-              <div className="flex flex-col items-center justify-center text-muted-foreground">
-                <LoadingSpinner className="h-12 w-12 text-primary" />
-                <p className="mt-3 text-lg font-medium">Analyzing...</p>
+            {(measurementState === 'measuring' || (measurementState === 'done' && liveMoistureData.length > 0)) && (
+              <div className="w-full h-[150px] -ml-4">
+                 <RealTimeMoistureChart data={liveMoistureData} />
               </div>
             )}
-            {measurementState === 'done' && moisture !== null && (
-              <>
+             {moisture !== null && (
+              <div className="text-center mt-4">
                 <p className="text-sm text-muted-foreground">Moisture Content</p>
-                <p className="text-7xl font-bold text-foreground leading-tight">
+                <p className="text-5xl font-bold text-foreground leading-tight">
                   {moisture}
-                  <span className="text-5xl text-muted-foreground/50">%</span>
+                  <span className="text-3xl text-muted-foreground/50">%</span>
                 </p>
-                <p className="font-semibold text-xl text-muted-foreground">{selectedGrain}</p>
-              </>
+                <p className="font-semibold text-lg text-muted-foreground">{selectedGrain}</p>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -220,14 +224,10 @@ export function GrainAnalyzerDashboard() {
         <Card>
           <CardHeader>
             <CardTitle>Measurement History</CardTitle>
-            <CardDescription>Recent readings and live logs.</CardDescription>
+            <CardDescription>Recent readings from your device.</CardDescription>
           </CardHeader>
           <CardContent className="max-h-64 overflow-y-auto text-sm">
-            {measurementState === 'measuring' ? (
-                <div className='font-mono text-xs'>
-                  {measurementLogs.map((log, i) => <p key={i}>{log}</p>)}
-                </div>
-            ) : measurementHistory.length > 0 ? (
+            {measurementHistory.length > 0 ? (
               <ul className='space-y-3'>
                 {measurementHistory.map((m, i) => (
                   <li key={i} className='flex justify-between items-center'>
@@ -329,5 +329,3 @@ const DeviceConnectionCard = ({ status, onConnect }: { status: DeviceStatus, onC
     </Card>
   )
 }
-
-    
