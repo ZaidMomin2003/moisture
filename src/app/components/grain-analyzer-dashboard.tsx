@@ -153,6 +153,7 @@ export function GrainAnalyzerDashboard({ deviceStatus, measurementState, handleM
                       ? 'border-primary bg-primary/10 shadow-md'
                       : 'border-transparent bg-accent hover:bg-accent/80'
                   )}
+                  disabled={measurementState === 'measuring'}
                 >
                   <grain.icon className="h-10 w-10 text-primary" />
                   <span className="font-semibold text-lg text-foreground">{grain.name}</span>
@@ -182,7 +183,7 @@ export function GrainAnalyzerDashboard({ deviceStatus, measurementState, handleM
             {measurementState === 'idle' && (
               <div className="text-muted-foreground text-center">
                 <p className="font-medium">Ready to measure</p>
-                <p className='text-sm'>Connect to device and press "Measure".</p>
+                <p className='text-sm'>Connect device and press "Measure".</p>
               </div>
             )}
             {(measurementState === 'measuring' || (measurementState === 'done' && liveMoistureData.length > 0)) && (
@@ -195,12 +196,18 @@ export function GrainAnalyzerDashboard({ deviceStatus, measurementState, handleM
                 <p className="text-sm text-muted-foreground">Moisture Content</p>
 
                 <p className="text-5xl font-bold text-foreground leading-tight">
-                  {moisture}
+                  {moisture.toFixed(1)}
                   <span className="text-3xl text-muted-foreground/50">%</span>
                 </p>
                 <p className="font-semibold text-lg text-muted-foreground">{selectedGrain}</p>
               </div>
             )}
+             {measurementState === 'measuring' && moisture === null && (
+                 <div className="flex flex-col items-center justify-center text-muted-foreground">
+                    <LoadingSpinner className="h-8 w-8" />
+                    <p className="mt-2 text-sm">Preparing measurement...</p>
+                 </div>
+             )}
           </CardContent>
         </Card>
         
@@ -223,14 +230,14 @@ export function GrainAnalyzerDashboard({ deviceStatus, measurementState, handleM
                       {m.grain === 'Rice' && <RiceIcon className='h-5 w-5 text-muted-foreground'/>}
                       {m.grain === 'Maize' && <MaizeIcon className='h-5 w-5 text-muted-foreground'/>}
                       <div>
-                        <span className='font-semibold'>{m.grain} - {m.moisture}%</span>
+                        <span className='font-semibold'>{m.grain} - {m.moisture.toFixed(1)}%</span>
                         <p className='text-muted-foreground text-xs'>
                           {m.timestamp.toLocaleTimeString()}
                         </p>
                       </div>
                     </div>
                      <span className='text-muted-foreground text-xs'>
-                      {measurementState === 'measuring' ? `+${10 - i -1}s ago` : m.timestamp.toLocaleDateString()}
+                      {measurementState === 'measuring' ? `+${10 - m.timestamp.getSeconds() % 10 -1}s ago` : m.timestamp.toLocaleDateString()}
                     </span>
                   </li>
                 ))}
@@ -283,3 +290,5 @@ const HarvestAdvisorCard = ({ status, title, suggestion }: { status: 'good' | 'c
     </Card>
   )
 };
+
+    
