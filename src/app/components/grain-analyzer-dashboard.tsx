@@ -5,8 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { WheatIcon, RiceIcon, MaizeIcon, LoadingSpinner } from '@/components/icons';
 import { cn } from '@/lib/utils';
 import { CheckCircle2, Info, XCircle } from 'lucide-react';
-import { TemperatureForecastChart, type DailyForecast } from './temperature-forecast-chart';
-import { generateTemperatureForecast } from '@/lib/weather-forecast';
+import { MoistureForecastChart, type DailyMoistureForecast } from './moisture-forecast-chart';
+import { generateMoistureForecast } from '@/lib/moisture-forecast';
 import { RealTimeMoistureChart, type MoistureReading } from './real-time-moisture-chart';
 import { getHarvestAdvice } from '@/ai/flows/harvest-advisor-flow';
 import type { HarvestAdvice } from '@/ai/flows/harvest-advisor-shared';
@@ -34,7 +34,7 @@ export function GrainAnalyzerDashboard({ deviceStatus, measurementState }: { dev
   const [isClient, setIsClient] = useState(false);
   const [pastMeasurements, setPastMeasurements] = useState<Measurement[]>([]);
   const [liveLogs, setLiveLogs] = useState<Measurement[]>([]);
-  const [forecast, setForecast] = useState<DailyForecast[]>([]);
+  const [forecast, setForecast] = useState<DailyMoistureForecast[]>([]);
   const [advisorStatus, setAdvisorStatus] = useState<'idle' | 'loading' | 'done'>('idle');
   const [advice, setAdvice] = useState<HarvestAdvice>({ status: 'caution', title: 'Awaiting results', suggestion: 'Complete a measurement to get advice.' });
   const [liveMoistureData, setLiveMoistureData] = useState<MoistureReading[]>([]);
@@ -42,7 +42,7 @@ export function GrainAnalyzerDashboard({ deviceStatus, measurementState }: { dev
   
   useEffect(() => {
     setIsClient(true);
-    setForecast(generateTemperatureForecast());
+    setForecast(generateMoistureForecast());
   }, []);
 
   useEffect(() => {
@@ -148,11 +148,11 @@ export function GrainAnalyzerDashboard({ deviceStatus, measurementState }: { dev
         
         <Card>
            <CardHeader>
-              <CardTitle>7-Day Temperature Forecast</CardTitle>
-              <CardDescription>Predicted temperature trends for harvest planning.</CardDescription>
+              <CardTitle>7-Day Moisture Forecast</CardTitle>
+              <CardDescription>Predicted grain moisture content based on weather patterns.</CardDescription>
             </CardHeader>
             <CardContent>
-                {isClient ? <TemperatureForecastChart data={forecast} /> : <div className="h-[250px] w-full flex items-center justify-center text-muted-foreground">Loading chart...</div>}
+                {isClient ? <MoistureForecastChart data={forecast} /> : <div className="h-[250px] w-full flex items-center justify-center text-muted-foreground">Loading chart...</div>}
             </CardContent>
         </Card>
       </div>
