@@ -1,12 +1,12 @@
 "use client"
 
-import { Area, AreaChart, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts"
+import { Area, AreaChart, Line, LineChart, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts"
 import { ChartContainer, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
 
 export type DailyMoistureForecast = {
   day: string;
-  predicted: number;
-  confidence: [number, number];
+  high: number;
+  low: number;
 }
 
 interface MoistureForecastChartProps {
@@ -14,14 +14,13 @@ interface MoistureForecastChartProps {
 }
 
 const chartConfig = {
-  predicted: {
-    label: "Predicted Moisture",
+  high: {
+    label: "High",
     color: "hsl(var(--primary))",
   },
-  confidence: {
-    label: "Confidence Interval",
-    color: "hsl(var(--primary) / 0.1)",
-    stroke: 'hsl(var(--primary) / 0.3)',
+  low: {
+    label: "Low",
+    color: "hsl(var(--primary) / 0.5)",
   }
 } satisfies ChartConfig;
 
@@ -30,7 +29,7 @@ export function MoistureForecastChart({ data }: MoistureForecastChartProps) {
   return (
     <div className="h-[250px] w-full">
        <ChartContainer config={chartConfig} className="w-full h-full">
-        <AreaChart
+        <LineChart
           accessibilityLayer
           data={data}
           margin={{
@@ -46,50 +45,34 @@ export function MoistureForecastChart({ data }: MoistureForecastChartProps) {
           <Tooltip
             cursor={{ fill: 'hsl(var(--accent))' }}
             content={<ChartTooltipContent 
-                formatter={(value, name, props) => {
-                    if (name === 'predicted') {
-                        const confidence = props.payload?.confidence || [0,0];
-                        return (
-                            <div>
-                                <div className="flex items-center">
-                                    <div className={`h-2.5 w-2.5 rounded-full mr-2 bg-[var(--color-predicted)]`}></div>
-                                    <span>{`Predicted: ${value}%`}</span>
-                                </div>
-                                 <p className="text-xs text-muted-foreground/80 pl-4">{`Confidence: ${confidence[0]}% - ${confidence[1]}%`}</p>
-                             </div>
-                        );
-                    }
-                    return null;
-                }}
+                formatter={(value, name) => (
+                    <div className="flex items-center">
+                        <div className={`h-2.5 w-2.5 rounded-full mr-2 bg-[var(--color-${name})]`}></div>
+                        <span>{`${name.charAt(0).toUpperCase() + name.slice(1)}: ${value}%`}</span>
+                    </div>
+                )}
             />}
           />
-           <defs>
-            <linearGradient id="fillPredicted" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="var(--color-predicted)" stopOpacity={0.8}/>
-              <stop offset="95%" stopColor="var(--color-predicted)" stopOpacity={0.1}/>
-            </linearGradient>
-          </defs>
-          <Area
-            dataKey="confidence"
-            type="monotone"
-            stroke="var(--color-confidence-stroke)"
-            strokeWidth={1.5}
-            strokeDasharray="4 4"
-            fill="var(--color-confidence)"
-            isAnimationActive={false}
-            name="Confidence"
-           />
-          <Area 
+          <Line 
             type="monotone" 
-            dataKey="predicted" 
-            stroke="var(--color-predicted)" 
+            dataKey="high" 
+            stroke="var(--color-high)" 
             strokeWidth={2}
-            fillOpacity={1} 
-            fill="url(#fillPredicted)" 
+            dot={false}
             isAnimationActive={true}
-            name="Predicted"
+            name="high"
           />
-        </AreaChart>
+          <Line 
+            type="monotone" 
+            dataKey="low" 
+            stroke="var(--color-low)" 
+            strokeWidth={2}
+            strokeDasharray="4 4"
+            dot={false}
+            isAnimationActive={true}
+            name="low"
+          />
+        </LineChart>
       </ChartContainer>
     </div>
   )

@@ -1,7 +1,6 @@
 # Digital Grain Moisture Analyzer
 
-This is a Next.js application for a digital grain moisture analyzer, built with Firebase Studio.
-
+This is a Next.js application for a digital grain moisture analyzer, built by Zaid Momin
 ## MVP Features
 
 *   **Moisture Measurement**: Simulate measuring moisture content for various grains.
