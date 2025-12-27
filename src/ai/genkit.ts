@@ -4,7 +4,7 @@ import genkitNext from '@genkit-ai/next';
 
 export const ai = genkit({
   plugins: [
-    googleAI(),
+    googleAI({ apiKey: process.env.GEMINI_API_KEY }),
     genkitNext(),
   ],
   logLevel: 'debug',
