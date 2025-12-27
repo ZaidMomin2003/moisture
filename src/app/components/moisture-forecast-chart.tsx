@@ -1,6 +1,6 @@
 "use client"
 
-import { Area, AreaChart, Line, LineChart, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts"
+import { Line, LineChart, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts"
 import { ChartContainer, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
 
 export type DailyMoistureForecast = {
@@ -47,7 +47,7 @@ export function MoistureForecastChart({ data }: MoistureForecastChartProps) {
             content={<ChartTooltipContent 
                 formatter={(value, name) => (
                     <div className="flex items-center">
-                        <div className={`h-2.5 w-2.5 rounded-full mr-2 bg-[var(--color-${name})]`}></div>
+                        <div className={`h-2.5 w-2.5 rounded-full mr-2`} style={{ backgroundColor: `var(--color-${name})` }}></div>
                         <span>{`${name.charAt(0).toUpperCase() + name.slice(1)}: ${value}%`}</span>
                     </div>
                 )}
