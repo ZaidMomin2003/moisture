@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { GrainAnalyzerDashboard, type DeviceStatus, type MeasurementState } from './components/grain-analyzer-dashboard';
-import { GrainScanLogo, LoadingSpinner } from '@/components/icons';
+import { AppLogo, LoadingSpinner } from '@/components/icons';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Wifi, Cpu, CheckCircle2, WifiOff } from 'lucide-react';
@@ -63,9 +63,9 @@ export default function Home() {
       <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-16 items-center justify-between">
           <div className="flex items-center gap-2">
-            <GrainScanLogo className="h-8 w-8 text-primary" />
+            <AppLogo className="h-8 w-8 text-primary" />
             <span className="font-bold text-xl font-headline text-foreground">
-              GrainScan
+              Digital Grain Moisture Analyzer
             </span>
           </div>
           <div className='flex items-center gap-4'>
@@ -94,7 +94,7 @@ export default function Home() {
       <footer className="py-6 mt-auto border-t bg-background">
         <div className="container flex items-center justify-between">
            <p className="text-xs text-muted-foreground">
-            &copy; {new Date().getFullYear()} GrainScan. Built for a better harvest.
+            &copy; {new Date().getFullYear()} Digital Grain Moisture Analyzer. Built for a better harvest.
           </p>
            <nav className="flex items-center gap-4">
               <Link href="/" className="text-sm font-medium text-muted-foreground hover:underline">Dashboard</Link>

@@ -3,7 +3,7 @@ import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 
 export const metadata: Metadata = {
-  title: 'GrainScan | Digital Grain Moisture Analyzer',
+  title: 'Digital Grain Moisture Analyzer',
   description: 'A low-cost, portable digital grain moisture analyzer to support better storage and quality control decisions.',
 };
 

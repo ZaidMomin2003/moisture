@@ -1,6 +1,6 @@
 import type { SVGProps } from 'react';
 
-export function GrainScanLogo(props: SVGProps<SVGSVGElement>) {
+export function AppLogo(props: SVGProps<SVGSVGElement>) {
   return (
     <svg
       {...props}

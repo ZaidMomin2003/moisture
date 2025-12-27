@@ -1,4 +1,4 @@
-import { GrainScanLogo } from '@/components/icons';
+import { AppLogo } from '@/components/icons';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import { Check, Wifi, Cloud, Code } from 'lucide-react';
@@ -128,9 +128,9 @@ export default function HardwarePage() {
             <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
                 <div className="container flex h-16 items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <GrainScanLogo className="h-8 w-8 text-primary" />
+                        <AppLogo className="h-8 w-8 text-primary" />
                         <span className="font-bold text-xl font-headline text-foreground">
-                            GrainScan Hardware
+                            Digital Grain Moisture Analyzer Hardware
                         </span>
                     </div>
                      <nav className="flex items-center gap-4">
@@ -143,7 +143,7 @@ export default function HardwarePage() {
                 <div className="container py-6 md:py-8">
                     <div className="max-w-4xl mx-auto">
                         <h1 className="text-3xl font-bold mb-2">Hardware Shopping List</h1>
-                        <p className="text-muted-foreground mb-8">Here are the components needed to build a physical GrainScan device. You can find these items on sites like Amazon, AliExpress, or specialty electronics stores.</p>
+                        <p className="text-muted-foreground mb-8">Here are the components needed to build a physical device. You can find these items on sites like Amazon, AliExpress, or specialty electronics stores.</p>
 
                         <div className="space-y-8">
                             {hardwareList.map((section) => (
@@ -222,7 +222,7 @@ export default function HardwarePage() {
              <footer className="py-6 mt-auto">
                 <div className="container flex items-center justify-center">
                     <p className="text-xs text-muted-foreground">
-                        &copy; {new Date().getFullYear()} GrainScan. Built for a better harvest.
+                        &copy; {new Date().getFullYear()} Digital Grain Moisture Analyzer. Built for a better harvest.
                     </p>
                 </div>
             </footer>

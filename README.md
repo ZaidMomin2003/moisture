@@ -1,4 +1,4 @@
-# GrainScan - Digital Grain Moisture Analyzer
+# Digital Grain Moisture Analyzer
 
 This is a Next.js application for a digital grain moisture analyzer, built with Firebase Studio.
 
