@@ -5,12 +5,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { WheatIcon, RiceIcon, MaizeIcon, LoadingSpinner } from '@/components/icons';
 import { cn } from '@/lib/utils';
-import { CheckCircle2, Info, XCircle, Cpu, Clock } from 'lucide-react';
+import { CheckCircle2, Info, XCircle, Cpu, Clock, Wifi, WifiOff, Check } from 'lucide-react';
 import { TemperatureForecastChart, type DailyForecast } from './temperature-forecast-chart';
 import { generateTemperatureForecast } from '@/lib/weather-forecast';
 
 type GrainType = 'Rice' | 'Wheat' | 'Maize';
 type MeasurementState = 'idle' | 'measuring' | 'done';
+type DeviceStatus = 'disconnected' | 'connecting' | 'connected';
 type Measurement = {
   grain: GrainType;
   moisture: number;
@@ -64,6 +65,7 @@ export function GrainAnalyzerDashboard() {
   const [forecast, setForecast] = useState<DailyForecast[]>([]);
   const [advisorStatus, setAdvisorStatus] = useState<'idle' | 'loading' | 'done'>('idle');
   const [advice, setAdvice] = useState<Advice>({ status: 'caution', title: 'Awaiting results', suggestion: 'Complete a measurement to get advice.' });
+  const [deviceStatus, setDeviceStatus] = useState<DeviceStatus>('disconnected');
   
   useEffect(() => {
     setIsClient(true);
@@ -92,7 +94,7 @@ export function GrainAnalyzerDashboard() {
     setAdvice({ status: 'caution', title: 'Awaiting results', suggestion: 'Complete a measurement to get advice.' });
 
     const interval = setInterval(() => {
-      setMeasurementLogs(prev => [...prev, `[${prev.length}s] Analyzing grain sample...`]);
+      setMeasurementLogs(prev => [...prev, `[${prev.length}s] Reading sensor value from device...`]);
     }, 1000);
 
     setTimeout(() => {
@@ -117,6 +119,13 @@ export function GrainAnalyzerDashboard() {
     setAdvisorStatus('idle');
     setAdvice({ status: 'caution', title: 'Awaiting results', suggestion: 'Complete a measurement to get advice.' });
   }
+
+  const handleConnectDevice = () => {
+    setDeviceStatus('connecting');
+    setTimeout(() => {
+      setDeviceStatus('connected');
+    }, 3000);
+  };
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -151,7 +160,7 @@ export function GrainAnalyzerDashboard() {
                 <h3 className="mb-4 text-sm font-medium text-muted-foreground">2. Start Measurement</h3>
                 <Button
                     onClick={handleMeasure}
-                    disabled={measurementState === 'measuring' || !isClient}
+                    disabled={measurementState === 'measuring' || !isClient || deviceStatus !== 'connected'}
                     className="text-base font-bold py-6 px-8 rounded-full shadow-lg transform hover:scale-105 transition-transform"
                     size="lg"
                   >
@@ -178,11 +187,11 @@ export function GrainAnalyzerDashboard() {
           <CardHeader>
             <CardTitle>Live Reading</CardTitle>
           </CardHeader>
-          <CardContent className="flex-grow flex flex-col items-center justify-center text-center p-6 min-h-[240px]">
+          <CardContent className="flex-grow flex flex-col items-center justify-center text-center p-6 min-h-[190px]">
             {measurementState === 'idle' && (
               <div className="text-muted-foreground">
                 <p className="font-medium">Ready to measure</p>
-                <p className='text-sm'>Select grain and press "Measure" to begin.</p>
+                <p className='text-sm'>Connect to device and press "Measure".</p>
               </div>
             )}
             {measurementState === 'measuring' && (
@@ -203,6 +212,8 @@ export function GrainAnalyzerDashboard() {
             )}
           </CardContent>
         </Card>
+
+        <DeviceConnectionCard status={deviceStatus} onConnect={handleConnectDevice} />
         
         <HarvestAdvisorCard status={advisorStatus === 'loading' ? 'loading' : advice.status} title={advice.title} suggestion={advice.suggestion} />
 
@@ -283,3 +294,40 @@ const HarvestAdvisorCard = ({ status, title, suggestion }: { status: 'good' | 'c
     </Card>
   )
 }
+
+const DeviceConnectionCard = ({ status, onConnect }: { status: DeviceStatus, onConnect: () => void }) => {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Device Connection</CardTitle>
+        <CardDescription>Connect to the GrainScan hardware.</CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-col items-center justify-center gap-4">
+        {status === 'disconnected' && (
+          <>
+            <WifiOff className="h-12 w-12 text-muted-foreground" />
+            <p className="text-muted-foreground text-center">Not connected to GrainScan device.</p>
+            <Button onClick={onConnect}>
+              <Wifi className="mr-2 h-4 w-4" /> Connect
+            </Button>
+          </>
+        )}
+        {status === 'connecting' && (
+          <>
+            <LoadingSpinner className="h-12 w-12 text-primary" />
+            <p className="text-muted-foreground">Searching for device...</p>
+          </>
+        )}
+        {status === 'connected' && (
+          <>
+            <CheckCircle2 className="h-12 w-12 text-green-500" />
+            <p className="font-semibold text-center text-green-600">Connected to GrainScan-A4B2</p>
+            <p className="text-xs text-muted-foreground">Ready to receive sensor data.</p>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
+    
