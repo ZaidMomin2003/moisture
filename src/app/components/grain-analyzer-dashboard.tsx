@@ -60,7 +60,8 @@ export function GrainAnalyzerDashboard({ deviceStatus, measurementState, handleM
   const [selectedGrain, setSelectedGrain] = useState<GrainType>('Wheat');
   const [moisture, setMoisture] = useState<number | null>(null);
   const [isClient, setIsClient] = useState(false);
-  const [measurementHistory, setMeasurementHistory] = useState<Measurement[]>([]);
+  const [pastMeasurements, setPastMeasurements] = useState<Measurement[]>([]);
+  const [liveLogs, setLiveLogs] = useState<Measurement[]>([]);
   const [forecast, setForecast] = useState<DailyForecast[]>([]);
   const [advisorStatus, setAdvisorStatus] = useState<'idle' | 'loading' | 'done'>('idle');
   const [advice, setAdvice] = useState<Advice>({ status: 'caution', title: 'Awaiting results', suggestion: 'Complete a measurement to get advice.' });
@@ -86,6 +87,7 @@ export function GrainAnalyzerDashboard({ deviceStatus, measurementState, handleM
      if (measurementState === 'measuring') {
         setMoisture(null);
         setLiveMoistureData([]);
+        setLiveLogs([]);
         setAdvisorStatus('idle');
         setAdvice({ status: 'caution', title: 'Awaiting results', suggestion: 'Complete a measurement to get advice.' });
 
@@ -102,27 +104,34 @@ export function GrainAnalyzerDashboard({ deviceStatus, measurementState, handleM
           setLiveMoistureData(prev => [...prev.slice(-29), reading]); // keep last 30 points
           setMoisture(reading.moisture);
 
+          const newLog = { grain: selectedGrain, moisture: reading.moisture, timestamp: new Date() };
+          setLiveLogs(prev => [newLog, ...prev]);
+
           if (time >= 10) { // Stop after 10 seconds
             clearInterval(interval);
-            const newMeasurement = { grain: selectedGrain, moisture: reading.moisture, timestamp: new Date() };
-            setMeasurementHistory(prev => [newMeasurement, ...prev]);
+            setPastMeasurements(prev => [newLog, ...prev]);
             // This relies on parent component to set measurementState to 'done'
           }
         }, 1000);
 
         return () => clearInterval(interval);
      }
+     if(measurementState === 'idle' || measurementState === 'done') {
+        setLiveLogs([]);
+     }
   }, [measurementState, selectedGrain]);
 
   
   const handleSelectGrain = (grain: GrainType) => {
     setSelectedGrain(grain);
-    // setMeasurementState('idle'); This is now controlled by parent
     setMoisture(null);
     setLiveMoistureData([]);
+    setLiveLogs([]);
     setAdvisorStatus('idle');
     setAdvice({ status: 'caution', title: 'Awaiting results', suggestion: 'Complete a measurement to get advice.' });
   }
+
+  const measurementHistory = measurementState === 'measuring' ? liveLogs : pastMeasurements;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -200,7 +209,9 @@ export function GrainAnalyzerDashboard({ deviceStatus, measurementState, handleM
         <Card>
           <CardHeader>
             <CardTitle>Measurement History</CardTitle>
-            <CardDescription>Recent readings from your device.</CardDescription>
+            <CardDescription>
+              {measurementState === 'measuring' ? 'Live measurement logs...' : 'Recent readings from your device.'}
+            </CardDescription>
           </CardHeader>
           <CardContent className="max-h-64 overflow-y-auto text-sm">
             {measurementHistory.length > 0 ? (
@@ -218,7 +229,9 @@ export function GrainAnalyzerDashboard({ deviceStatus, measurementState, handleM
                         </p>
                       </div>
                     </div>
-                     <span className='text-muted-foreground text-xs'>{m.timestamp.toLocaleDateString()}</span>
+                     <span className='text-muted-foreground text-xs'>
+                      {measurementState === 'measuring' ? `+${10 - i -1}s ago` : m.timestamp.toLocaleDateString()}
+                    </span>
                   </li>
                 ))}
               </ul>
