@@ -2,17 +2,17 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { WheatIcon, RiceIcon, MaizeIcon, LoadingSpinner } from '@/components/icons';
 import { cn } from '@/lib/utils';
-import { CheckCircle2, Info, XCircle, Cpu, Clock, Wifi, WifiOff } from 'lucide-react';
+import { CheckCircle2, Info, XCircle, Clock } from 'lucide-react';
 import { TemperatureForecastChart, type DailyForecast } from './temperature-forecast-chart';
 import { generateTemperatureForecast } from '@/lib/weather-forecast';
 import { RealTimeMoistureChart, type MoistureReading } from './real-time-moisture-chart';
 
-type GrainType = 'Rice' | 'Wheat' | 'Maize';
-type MeasurementState = 'idle' | 'measuring' | 'done';
-type DeviceStatus = 'disconnected' | 'connecting' | 'connected';
+export type GrainType = 'Rice' | 'Wheat' | 'Maize';
+export type MeasurementState = 'idle' | 'measuring' | 'done';
+export type DeviceStatus = 'disconnected' | 'connecting' | 'connected';
+
 type Measurement = {
   grain: GrainType;
   moisture: number;
@@ -56,16 +56,14 @@ const getHardcodedHarvestAdvice = (grainType: GrainType, moisture: number): Advi
 };
 
 
-export function GrainAnalyzerDashboard() {
+export function GrainAnalyzerDashboard({ deviceStatus, measurementState, handleMeasure }: { deviceStatus: DeviceStatus, measurementState: MeasurementState, handleMeasure: () => void }) {
   const [selectedGrain, setSelectedGrain] = useState<GrainType>('Wheat');
-  const [measurementState, setMeasurementState] = useState<MeasurementState>('idle');
   const [moisture, setMoisture] = useState<number | null>(null);
   const [isClient, setIsClient] = useState(false);
   const [measurementHistory, setMeasurementHistory] = useState<Measurement[]>([]);
   const [forecast, setForecast] = useState<DailyForecast[]>([]);
   const [advisorStatus, setAdvisorStatus] = useState<'idle' | 'loading' | 'done'>('idle');
   const [advice, setAdvice] = useState<Advice>({ status: 'caution', title: 'Awaiting results', suggestion: 'Complete a measurement to get advice.' });
-  const [deviceStatus, setDeviceStatus] = useState<DeviceStatus>('disconnected');
   const [liveMoistureData, setLiveMoistureData] = useState<MoistureReading[]>([]);
   
   useEffect(() => {
@@ -84,95 +82,74 @@ export function GrainAnalyzerDashboard() {
     }
   }, [measurementState, moisture, selectedGrain]);
 
+  useEffect(() => {
+     if (measurementState === 'measuring') {
+        setMoisture(null);
+        setLiveMoistureData([]);
+        setAdvisorStatus('idle');
+        setAdvice({ status: 'caution', title: 'Awaiting results', suggestion: 'Complete a measurement to get advice.' });
 
-  const handleMeasure = () => {
-    if (!isClient) return;
+        let time = 0;
+        const baseMoisture = selectedGrain === 'Rice' ? 12 : selectedGrain === 'Wheat' ? 14 : 18;
+        
+        const interval = setInterval(() => {
+          time++;
+          const randomFluctuation = (Math.random() - 0.5) * 0.4;
+          const trend = Math.sin(time / 3) * 0.5; // slow sine wave for a trend
+          const newMoisture = baseMoisture + trend + randomFluctuation;
+          const reading = { time, moisture: parseFloat(newMoisture.toFixed(1)) };
+          
+          setLiveMoistureData(prev => [...prev.slice(-29), reading]); // keep last 30 points
+          setMoisture(reading.moisture);
 
-    setMeasurementState('measuring');
-    setMoisture(null);
-    setLiveMoistureData([]);
-    setAdvisorStatus('idle');
-    setAdvice({ status: 'caution', title: 'Awaiting results', suggestion: 'Complete a measurement to get advice.' });
+          if (time >= 10) { // Stop after 10 seconds
+            clearInterval(interval);
+            const newMeasurement = { grain: selectedGrain, moisture: reading.moisture, timestamp: new Date() };
+            setMeasurementHistory(prev => [newMeasurement, ...prev]);
+            // This relies on parent component to set measurementState to 'done'
+          }
+        }, 1000);
 
-    let time = 0;
-    const baseMoisture = selectedGrain === 'Rice' ? 12 : selectedGrain === 'Wheat' ? 14 : 18;
-    
-    const interval = setInterval(() => {
-      time++;
-      const randomFluctuation = (Math.random() - 0.5) * 0.4;
-      const trend = Math.sin(time / 3) * 0.5; // slow sine wave for a trend
-      const newMoisture = baseMoisture + trend + randomFluctuation;
-      const reading = { time, moisture: parseFloat(newMoisture.toFixed(1)) };
-      
-      setLiveMoistureData(prev => [...prev.slice(-29), reading]); // keep last 30 points
-      setMoisture(reading.moisture);
+        return () => clearInterval(interval);
+     }
+  }, [measurementState, selectedGrain]);
 
-      if (time >= 10) { // Stop after 10 seconds
-        clearInterval(interval);
-        setMeasurementState('done');
-        const newMeasurement = { grain: selectedGrain, moisture: reading.moisture, timestamp: new Date() };
-        setMeasurementHistory(prev => [newMeasurement, ...prev]);
-      }
-    }, 1000);
-  };
   
   const handleSelectGrain = (grain: GrainType) => {
     setSelectedGrain(grain);
-    setMeasurementState('idle');
+    // setMeasurementState('idle'); This is now controlled by parent
     setMoisture(null);
     setLiveMoistureData([]);
     setAdvisorStatus('idle');
     setAdvice({ status: 'caution', title: 'Awaiting results', suggestion: 'Complete a measurement to get advice.' });
   }
 
-  const handleConnectDevice = () => {
-    setDeviceStatus('connecting');
-    setTimeout(() => {
-      setDeviceStatus('connected');
-    }, 3000);
-  };
-
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div className="lg:col-span-2 flex flex-col gap-6">
         <Card>
            <CardHeader>
-            <CardTitle>Moisture Analyzer</CardTitle>
-            <CardDescription>Select a grain type and start the measurement.</CardDescription>
+            <CardTitle>Grain Selection</CardTitle>
+            <CardDescription>Choose the type of grain you are analyzing.</CardDescription>
           </CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-             <div>
-                <h3 className="mb-4 text-sm font-medium text-muted-foreground">1. Select Grain</h3>
-                <div className="grid grid-cols-3 gap-3">
-                    {grains.map((grain) => (
-                      <button
-                        key={grain.name}
-                        onClick={() => handleSelectGrain(grain.name)}
-                        className={cn(
-                          'flex flex-col items-center justify-center gap-2 p-3 border-2 rounded-lg transition-all',
-                          selectedGrain === grain.name
-                            ? 'border-primary bg-primary/10 shadow-md'
-                            : 'border-transparent bg-accent hover:bg-accent/80'
-                        )}
-                      >
-                        <grain.icon className="h-8 w-8 text-primary" />
-                        <span className="font-semibold text-md text-foreground">{grain.name}</span>
-                      </button>
-                    ))}
-                  </div>
-             </div>
-             <div className="flex flex-col items-center justify-center">
-                <h3 className="mb-4 text-sm font-medium text-muted-foreground">2. Start Measurement</h3>
-                <Button
-                    onClick={handleMeasure}
-                    disabled={measurementState === 'measuring' || !isClient || deviceStatus !== 'connected'}
-                    className="text-base font-bold py-6 px-8 rounded-full shadow-lg transform hover:scale-105 transition-transform"
-                    size="lg"
-                  >
-                    <Cpu className="mr-2 h-5 w-5" />
-                    {measurementState === 'measuring' ? 'Measuring...' : 'Measure Moisture'}
-                  </Button>
-             </div>
+          <CardContent>
+            <div className="grid grid-cols-3 gap-4">
+              {grains.map((grain) => (
+                <button
+                  key={grain.name}
+                  onClick={() => handleSelectGrain(grain.name)}
+                  className={cn(
+                    'flex flex-col items-center justify-center gap-2 p-4 border-2 rounded-lg transition-all',
+                    selectedGrain === grain.name
+                      ? 'border-primary bg-primary/10 shadow-md'
+                      : 'border-transparent bg-accent hover:bg-accent/80'
+                  )}
+                >
+                  <grain.icon className="h-10 w-10 text-primary" />
+                  <span className="font-semibold text-lg text-foreground">{grain.name}</span>
+                </button>
+              ))}
+            </div>
           </CardContent>
         </Card>
         
@@ -207,6 +184,7 @@ export function GrainAnalyzerDashboard() {
              {moisture !== null && (
               <div className="text-center mt-4">
                 <p className="text-sm text-muted-foreground">Moisture Content</p>
+
                 <p className="text-5xl font-bold text-foreground leading-tight">
                   {moisture}
                   <span className="text-3xl text-muted-foreground/50">%</span>
@@ -216,8 +194,6 @@ export function GrainAnalyzerDashboard() {
             )}
           </CardContent>
         </Card>
-
-        <DeviceConnectionCard status={deviceStatus} onConnect={handleConnectDevice} />
         
         <HarvestAdvisorCard status={advisorStatus === 'loading' ? 'loading' : advice.status} title={advice.title} suggestion={advice.suggestion} />
 
@@ -293,39 +269,4 @@ const HarvestAdvisorCard = ({ status, title, suggestion }: { status: 'good' | 'c
         </CardContent>
     </Card>
   )
-}
-
-const DeviceConnectionCard = ({ status, onConnect }: { status: DeviceStatus, onConnect: () => void }) => {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Device Connection</CardTitle>
-        <CardDescription>Connect to the GrainScan hardware.</CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-col items-center justify-center gap-4">
-        {status === 'disconnected' && (
-          <>
-            <WifiOff className="h-12 w-12 text-muted-foreground" />
-            <p className="text-muted-foreground text-center">Not connected to GrainScan device.</p>
-            <Button onClick={onConnect}>
-              <Wifi className="mr-2 h-4 w-4" /> Connect
-            </Button>
-          </>
-        )}
-        {status === 'connecting' && (
-          <>
-            <LoadingSpinner className="h-12 w-12 text-primary" />
-            <p className="text-muted-foreground">Searching for device...</p>
-          </>
-        )}
-        {status === 'connected' && (
-          <>
-            <CheckCircle2 className="h-12 w-12 text-green-500" />
-            <p className="font-semibold text-center text-green-600">Connected to GrainScan-A4B2</p>
-            <p className="text-xs text-muted-foreground">Ready to receive sensor data.</p>
-          </>
-        )}
-      </CardContent>
-    </Card>
-  )
-}
+};
