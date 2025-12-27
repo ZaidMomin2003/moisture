@@ -1,7 +1,7 @@
 'use server';
-import { genkit, type GenkitErrorCode } from 'genkit';
+import { genkit } from 'genkit';
 import { googleAI } from '@genkit-ai/google-genai';
-import { genkitNext } from '@genkit-ai/next';
+import genkitNext from '@genkit-ai/next';
 
 export const ai = genkit({
   plugins: [

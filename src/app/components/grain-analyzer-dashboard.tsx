@@ -8,7 +8,8 @@ import { CheckCircle2, Info, XCircle } from 'lucide-react';
 import { TemperatureForecastChart, type DailyForecast } from './temperature-forecast-chart';
 import { generateTemperatureForecast } from '@/lib/weather-forecast';
 import { RealTimeMoistureChart, type MoistureReading } from './real-time-moisture-chart';
-import { getHarvestAdvice, type HarvestAdvice } from '@/ai/flows/harvest-advisor-flow';
+import { getHarvestAdvice } from '@/ai/flows/harvest-advisor-flow';
+import type { HarvestAdvice } from '@/ai/flows/harvest-advisor-shared';
 import { useToast } from '@/hooks/use-toast';
 
 export type GrainType = 'Rice' | 'Wheat' | 'Maize';
@@ -93,9 +94,6 @@ export function GrainAnalyzerDashboard({ deviceStatus, measurementState }: { dev
           
           setLiveMoistureData(prev => [...prev.slice(-29), reading]);
           setMoisture(reading.moisture);
-
-          const newLog = { grain: selectedGrain, moisture: reading.moisture, timestamp: new Date() };
-          setLiveLogs(prev => [newLog, ...prev]);
 
           if (time >= 10) { 
             clearInterval(interval);
