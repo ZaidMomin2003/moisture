@@ -116,9 +116,6 @@ export function GrainAnalyzerDashboard({ deviceStatus, measurementState, handleM
 
         return () => clearInterval(interval);
      }
-     if(measurementState === 'idle' || measurementState === 'done') {
-        setLiveLogs([]);
-     }
   }, [measurementState, selectedGrain]);
 
   
@@ -237,7 +234,7 @@ export function GrainAnalyzerDashboard({ deviceStatus, measurementState, handleM
                       </div>
                     </div>
                      <span className='text-muted-foreground text-xs'>
-                      {measurementState === 'measuring' ? `+${10 - m.timestamp.getSeconds() % 10 -1}s ago` : m.timestamp.toLocaleDateString()}
+                      {measurementState === 'measuring' ? `+${10 - new Date().getSeconds() - m.timestamp.getSeconds() }s ago` : m.timestamp.toLocaleDateString()}
                     </span>
                   </li>
                 ))}
@@ -290,5 +287,3 @@ const HarvestAdvisorCard = ({ status, title, suggestion }: { status: 'good' | 'c
     </Card>
   )
 };
-
-    
