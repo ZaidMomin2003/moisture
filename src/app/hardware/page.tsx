@@ -1,7 +1,8 @@
+
 import { AppLogo } from '@/components/icons';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
-import { Check, Wifi, Cloud, Code } from 'lucide-react';
+import { Check, Wifi, Cloud, Code, RadioTower } from 'lucide-react';
 
 const hardwareList = [
     {
@@ -189,9 +190,31 @@ export default function HardwarePage() {
                                             <Cloud className="h-6 w-6 text-primary" />
                                         </div>
                                         <div>
-                                            <h3 className="font-semibold text-lg">Option 2: Cloud Connected (Vercel-Friendly)</h3>
-                                            <p className="text-muted-foreground text-sm">The ESP32 connects to your home Wi-Fi and pushes sensor data to a cloud database (like Firebase Firestore). The app, hosted on Vercel, reads from that same database.
+                                            <h3 className="font-semibold text-lg">Option 2: Cloud Connected via Wi-Fi (Vercel-Friendly)</h3>
+                                            <p className="text-muted-foreground text-sm">The ESP32 connects to your home/farm Wi-Fi and pushes sensor data to a cloud database (like Firebase Firestore). The app, hosted on Vercel, reads from that same database.
                                             <br /> <span className="font-semibold text-green-600">This is the recommended approach for a real-world, deployable product.</span>
+                                            </p>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Advanced: Long-Range with LoRaWAN</CardTitle>
+                                    <CardDescription>For deploying sensors over large areas without Wi-Fi.</CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-6">
+                                     <div className="flex items-start gap-4">
+                                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                                            <RadioTower className="h-6 w-6 text-primary" />
+                                        </div>
+                                        <div>
+                                            <h3 className="font-semibold text-lg">Option 3: LoRaWAN for Agriculture</h3>
+                                            <p className="text-muted-foreground text-sm">LoRaWAN is a wireless protocol designed for long-range, low-power communication, perfect for large farms.
+                                            <br /> The data pipeline is more complex: <br />
+                                            <span className="font-mono text-xs">Sensor -> LoRaWAN Node -> Gateway -> Network Server (e.g., The Things Network) -> Firebase -> Your App</span>
+                                             <br /> <span className="font-semibold text-sky-600">This is a professional-grade solution for wide-area IoT deployments. The web app code does not need to change.</span>
                                             </p>
                                         </div>
                                     </div>
@@ -204,7 +227,7 @@ export default function HardwarePage() {
                                         <Code className="h-5 w-5" />
                                         ESP32 Firmware Example (Arduino C++)
                                     </CardTitle>
-                                    <CardDescription>This is the code you would flash onto your ESP32. It handles connecting to Wi-Fi and sending sensor data to Firebase Firestore.</CardDescription>
+                                    <CardDescription>This is the code you would flash onto your ESP32 for the cloud-connected Wi-Fi approach (Option 2). It handles connecting to Wi-Fi and sending sensor data to Firebase Firestore.</CardDescription>
                                 </CardHeader>
                                 <CardContent>
                                     <div className="bg-muted p-4 rounded-lg text-xs overflow-x-auto">
@@ -229,3 +252,6 @@ export default function HardwarePage() {
         </div>
     );
 }
+
+
+    
