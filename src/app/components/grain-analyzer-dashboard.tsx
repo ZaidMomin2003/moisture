@@ -210,43 +210,6 @@ export function GrainAnalyzerDashboard({ deviceStatus, measurementState, handleM
         
         <HarvestAdvisorCard status={advisorStatus === 'loading' ? 'loading' : advice.status} title={advice.title} suggestion={advice.suggestion} />
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Measurement History</CardTitle>
-            <CardDescription>
-              {measurementState === 'measuring' ? 'Live measurement logs...' : 'Recent readings from your device.'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="max-h-64 overflow-y-auto text-sm">
-            {measurementHistory.length > 0 ? (
-              <ul className='space-y-3'>
-                {measurementHistory.map((m, i) => (
-                  <li key={i} className='flex justify-between items-center'>
-                    <div className='flex items-center gap-3'>
-                      {m.grain === 'Wheat' && <WheatIcon className='h-5 w-5 text-muted-foreground'/>}
-                      {m.grain === 'Rice' && <RiceIcon className='h-5 w-5 text-muted-foreground'/>}
-                      {m.grain === 'Maize' && <MaizeIcon className='h-5 w-5 text-muted-foreground'/>}
-                      <div>
-                        <span className='font-semibold'>{m.grain} - {m.moisture.toFixed(1)}%</span>
-                        <p className='text-muted-foreground text-xs'>
-                          {m.timestamp.toLocaleTimeString()}
-                        </p>
-                      </div>
-                    </div>
-                     <span className='text-muted-foreground text-xs'>
-                      {measurementState === 'measuring' ? `+${10 - new Date().getSeconds() - m.timestamp.getSeconds() }s ago` : m.timestamp.toLocaleDateString()}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <div className="text-center text-muted-foreground py-8">
-                <Clock className="h-8 w-8 mx-auto text-gray-300" />
-                <p className="mt-2">No measurements recorded yet.</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
