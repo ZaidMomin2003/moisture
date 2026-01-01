@@ -18,10 +18,8 @@ export default function ConnectPage() {
     useEffect(() => {
         if (status === 'listening') {
             const timer = setTimeout(() => {
-                // In a real app, you'd be listening to a Firestore snapshot.
-                // We'll simulate finding a device after a few seconds.
-                setStatus('connected');
-            }, 4000);
+                setStatus('error');
+            }, 5000);
             return () => clearTimeout(timer);
         }
     }, [status]);
@@ -31,7 +29,6 @@ export default function ConnectPage() {
     };
 
     const handleReturnToDashboard = () => {
-        // In a real app, you might pass the connected device ID back.
         router.push('/');
     };
 
@@ -63,9 +60,9 @@ export default function ConnectPage() {
                  return (
                      <div className="flex flex-col items-center gap-4 text-center">
                         <AlertTriangle className="h-16 w-16 text-red-500" />
-                        <h2 className="text-2xl font-bold">Connection Failed</h2>
+                        <h2 className="text-2xl font-bold">No Sensor Found</h2>
                         <p className="text-muted-foreground">
-                           Could not detect a signal from any sensor device. Please check your hardware setup.
+                           Could not detect a signal from any sensor device. Please check your hardware setup and firmware.
                         </p>
                         <Button onClick={handleStartListening} variant="outline" className='mt-4'>Try Again</Button>
                     </div>
