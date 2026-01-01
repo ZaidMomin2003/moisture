@@ -6,7 +6,6 @@ export type DailyMoistureForecast = {
   low: number;
 };
 
-// Simulates a 7-day moisture forecast for grain
 export function generateMoistureForecast(): DailyMoistureForecast[] {
   const forecast: DailyMoistureForecast[] = [];
   const today = new Date();
@@ -19,11 +18,9 @@ export function generateMoistureForecast(): DailyMoistureForecast[] {
     const date = addDays(today, i);
     const dayName = format(date, 'E');
 
-    // Simulate daily changes: general drying trend with some random fluctuation
     currentHigh += -0.3 + (Math.random() - 0.5) * 1.5;
     currentLow += -0.3 + (Math.random() - 0.4) * 1.5;
 
-    // Ensure moisture stays within a realistic range and high > low
     if (currentHigh < 12) currentHigh = 12 + Math.random();
     if (currentHigh > 22) currentHigh = 22 - Math.random();
     if (currentLow < 11) currentLow = 11 + Math.random();

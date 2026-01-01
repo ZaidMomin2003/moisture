@@ -30,7 +30,7 @@ export default function Home() {
     setMeasurementState('measuring');
     setTimeout(() => {
         setMeasurementState('done');
-    }, 10000); // The measurement itself runs for 10s inside the dashboard
+    }, 10000);
   };
 
   const ConnectButton = () => {

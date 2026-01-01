@@ -59,7 +59,6 @@ export function GrainAnalyzerDashboard({ deviceStatus, measurementState }: { dev
             title: "AI Advisor Error",
             description: "There was an issue connecting to the harvest advisor service.",
           });
-          // Fallback to a default error state for the card
           setAdvice({
             status: 'bad',
             title: 'Error',
@@ -88,7 +87,7 @@ export function GrainAnalyzerDashboard({ deviceStatus, measurementState }: { dev
         const interval = setInterval(() => {
           time++;
           const randomFluctuation = (Math.random() - 0.5) * 0.4;
-          const trend = Math.sin(time / 3) * 0.5; // slow sine wave for a trend
+          const trend = Math.sin(time / 3) * 0.5;
           const newMoisture = baseMoisture + trend + randomFluctuation;
           const reading = { time, moisture: parseFloat(newMoisture.toFixed(1)) };
           

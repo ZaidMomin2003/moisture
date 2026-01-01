@@ -29,28 +29,20 @@ const hardwareList = [
 ];
 
 const firmwareCode = `
-// Required Libraries (Install via Arduino IDE Library Manager):
-// - "Firebase Arduino Client Library for ESP32 and ESP8266" by Mobizt
-// - "ArduinoJson" by Benoit Blanchon
-
 #include <WiFi.h>
 #include <Firebase_ESP_Client.h>
 #include <ArduinoJson.h>
 
-// --- WIFI CREDENTIALS ---
 #define WIFI_SSID "YOUR_WIFI_SSID"
 #define WIFI_PASSWORD "YOUR_WIFI_PASSWORD"
 
-// --- FIREBASE PROJECT CONFIG ---
 #define API_KEY "YOUR_FIREBASE_WEB_API_KEY"
 #define FIREBASE_PROJECT_ID "YOUR_FIREBASE_PROJECT_ID"
-#define USER_EMAIL "device@grainscan.com" // A generic email for the device
-#define USER_PASSWORD "device_password"  // A secure password for the device user
+#define USER_EMAIL "device@grainscan.com"
+#define USER_PASSWORD "device_password"
 
-// --- SENSOR PIN ---
-#define SENSOR_PIN 34 // ESP32 ADC1_CH6
+#define SENSOR_PIN 34
 
-// Firebase objects
 FirebaseData fbdo;
 FirebaseAuth auth;
 FirebaseConfig config;
@@ -60,7 +52,6 @@ unsigned long sendDataPrevMillis = 0;
 void setup() {
   Serial.begin(115200);
 
-  // --- Connect to Wi-Fi ---
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   Serial.print("Connecting to Wi-Fi");
   while (WiFi.status() != WL_CONNECTED) {
@@ -71,7 +62,6 @@ void setup() {
   Serial.print("Connected with IP: ");
   Serial.println(WiFi.localIP());
 
-  // --- Configure Firebase ---
   config.api_key = API_KEY;
   config.project_id = FIREBASE_PROJECT_ID;
   auth.user.email = USER_EMAIL;
@@ -80,7 +70,6 @@ void setup() {
   Firebase.begin(&config, &auth);
   Firebase.reconnectWiFi(true);
 
-  // Set up a new user for the device if it doesn't exist
   if (!Firebase.userReady()){
     Serial.println("Creating new device user...");
     Firebase.createUser(fbdo, API_KEY, USER_EMAIL, USER_PASSWORD);
@@ -88,29 +77,22 @@ void setup() {
 }
 
 void loop() {
-  // Send data to Firestore every 5 seconds
   if (Firebase.ready() && (millis() - sendDataPrevMillis > 5000)) {
     sendDataPrevMillis = millis();
 
-    // --- Read Sensor ---
     int rawValue = analogRead(SENSOR_PIN);
     Serial.print("Sensor raw value: ");
     Serial.println(rawValue);
 
-    // --- Prepare Data for Firestore ---
-    // The path to the document: /live_reading/device_A4B2
     String documentPath = "live_reading/device_A4B2";
 
-    // The data to write
-    // Using ArduinoJson to create a JSON object
     StaticJsonDocument<200> jsonDoc;
     jsonDoc["rawValue"] = rawValue;
-    jsonDoc["timestamp"] = millis(); // Example timestamp
+    jsonDoc["timestamp"] = millis();
 
     String jsonString;
     serializeJson(jsonDoc, jsonString);
 
-    // --- Write to Firestore ---
     Serial.printf("Writing to Firestore: %s\\n", documentPath.c_str());
     if (Firebase.Firestore.patchDocument(fbdo, FIREBASE_PROJECT_ID, "", documentPath.c_str(), jsonString.c_str())) {
       Serial.println("Firestore write PASSED");
@@ -252,8 +234,3 @@ export default function HardwarePage() {
         </div>
     );
 }
-
-
-    
-
-    
