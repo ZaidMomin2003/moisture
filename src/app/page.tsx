@@ -112,19 +112,50 @@ export default function Home() {
             </span>
           </div>
           <div className='flex items-center gap-4'>
-            {isClient && <ConnectButton />}
-            <Button
-              onClick={handleMeasure}
-              disabled={measurementState === 'measuring' || !isClient || deviceStatus !== 'connected'}
-              className="font-bold"
-            >
-              {measurementState === 'measuring' ? <><LoadingSpinner /> Measuring...</> : <><Cpu /> Measure Moisture</>}
-            </Button>
+            {/* Minimal header as buttons are now in the Hero section */}
           </div>
         </div>
       </header>
 
-      <main className="flex-1">
+      <section className="relative w-full py-12 md:py-20 overflow-hidden bg-slate-950">
+        <div className="absolute inset-0 opacity-40">
+          {/* In a real environment, you'd use the generated image here. For now, we use a beautiful gradient pattern */}
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-primary/30 via-slate-900 to-slate-950"></div>
+          <div className="absolute inset-0 bg-[grid-line:rgba(255,255,255,0.05)_1px_transparent_0] [background-size:40px_40px]"></div>
+        </div>
+
+        <div className="container relative z-10">
+          <div className="max-w-3xl">
+            <div className="inline-flex items-center rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-medium text-primary mb-6 animate-pulse">
+              <Cpu className="mr-2 h-3 w-3" />
+              Powered by Gemma 3:1B & ESP32
+            </div>
+            <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-white mb-6">
+              The Future of <span className="text-primary italic">Smart Harvesting</span>
+            </h1>
+            <p className="text-xl text-slate-400 max-w-xl mb-10 leading-relaxed">
+              Precision moisture analysis meets advanced AI. Get laboratory-grade insights directly from your field with our integrated sensor-to-cloud ecosystem.
+            </p>
+            <div className='flex flex-wrap gap-4'>
+              {isClient && <ConnectButton />}
+              <Button
+                onClick={handleMeasure}
+                size="lg"
+                disabled={measurementState === 'measuring' || !isClient || deviceStatus !== 'connected'}
+                className="font-bold text-lg px-8 h-14 shadow-lg shadow-primary/20"
+              >
+                {measurementState === 'measuring' ? <><LoadingSpinner /> Analyzing...</> : <><Cpu className="scale-125" /> Take Measurement</>}
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        <div className="absolute right-[-10%] top-1/2 -translate-y-1/2 hidden lg:block opacity-20 hover:opacity-100 transition-opacity duration-1000">
+          <AppLogo className="h-[600px] w-[600px] text-primary rotate-12 blur-3xl" />
+        </div>
+      </section>
+
+      <main className="flex-1 -mt-8 relative z-20">
         <div className="container py-6 md:py-8">
           <GrainAnalyzerDashboard
             deviceStatus={deviceStatus}

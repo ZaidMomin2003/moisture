@@ -4,9 +4,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { WheatIcon, RiceIcon, MaizeIcon, LoadingSpinner } from '@/components/icons';
 import { cn } from '@/lib/utils';
-import { CheckCircle2, Info, XCircle } from 'lucide-react';
-import { MoistureForecastChart, type DailyMoistureForecast } from './moisture-forecast-chart';
-import { generateMoistureForecast } from '@/lib/moisture-forecast';
+import { CheckCircle2, Info, XCircle, Cloud, Droplets, Thermometer, TrendingDown, Wind } from 'lucide-react';
 import { RealTimeMoistureChart, type MoistureReading } from './real-time-moisture-chart';
 import { getHarvestAdvice } from '@/ai/flows/harvest-advisor-flow';
 import type { HarvestAdvice } from '@/ai/flows/harvest-advisor-shared';
@@ -35,7 +33,6 @@ export function GrainAnalyzerDashboard({ deviceStatus, measurementState, isSimul
   const [isClient, setIsClient] = useState(false);
   const [pastMeasurements, setPastMeasurements] = useState<Measurement[]>([]);
   const [liveLogs, setLiveLogs] = useState<Measurement[]>([]);
-  const [forecast, setForecast] = useState<DailyMoistureForecast[]>([]);
   const [advisorStatus, setAdvisorStatus] = useState<'idle' | 'loading' | 'done'>('idle');
   const [advice, setAdvice] = useState<HarvestAdvice>({ status: 'caution', title: 'Awaiting results', suggestion: 'Complete a measurement to get advice.' });
   const [liveMoistureData, setLiveMoistureData] = useState<MoistureReading[]>([]);
@@ -43,7 +40,6 @@ export function GrainAnalyzerDashboard({ deviceStatus, measurementState, isSimul
 
   useEffect(() => {
     setIsClient(true);
-    setForecast(generateMoistureForecast());
   }, []);
 
   useEffect(() => {
@@ -169,13 +165,40 @@ export function GrainAnalyzerDashboard({ deviceStatus, measurementState, isSimul
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>7-Day Moisture Forecast</CardTitle>
-            <CardDescription>Predicted grain moisture content based on weather patterns.</CardDescription>
+        <Card className="overflow-hidden border-none shadow-xl bg-gradient-to-br from-primary/10 via-background to-accent/20">
+          <CardHeader className="relative z-10">
+            <CardTitle className="text-2xl font-bold flex items-center gap-2">
+              <Cloud className="text-primary" />
+              Quick Field Insights
+            </CardTitle>
+            <CardDescription>Real-time environmental conditions for your {selectedGrain} crops.</CardDescription>
           </CardHeader>
-          <CardContent>
-            {isClient ? <MoistureForecastChart data={forecast} /> : <div className="h-[250px] w-full flex items-center justify-center text-muted-foreground">Loading chart...</div>}
+          <CardContent className="relative z-10">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {[
+                { label: 'Air Temp', value: '24°C', icon: Thermometer, color: 'text-orange-500' },
+                { label: 'Humidity', value: '62%', icon: Droplets, color: 'text-blue-500' },
+                { label: 'Wind Speed', value: '12km/h', icon: Wind, color: 'text-green-500' },
+                { label: 'Soil Health', value: 'Optimal', icon: TrendingDown, color: 'text-primary' },
+              ].map((stat) => (
+                <div key={stat.label} className="flex flex-col items-center justify-center p-4 bg-background/60 backdrop-blur-sm rounded-xl border border-primary/10">
+                  <stat.icon className={cn("h-6 w-6 mb-2", stat.color)} />
+                  <span className="text-xs text-muted-foreground uppercase font-semibold">{stat.label}</span>
+                  <span className="text-lg font-bold">{stat.value}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-8 p-6 rounded-2xl bg-primary/5 border border-primary/20 flex items-center justify-between">
+              <div>
+                <h3 className="font-bold text-lg">Next Rain Predicted</h3>
+                <p className="text-sm text-muted-foreground">Approx. 48 hours from now (Light Showers)</p>
+              </div>
+              <div className="text-right">
+                <span className="text-3xl font-bold text-primary">80%</span>
+                <p className="text-[10px] text-muted-foreground uppercase">Confidence</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
