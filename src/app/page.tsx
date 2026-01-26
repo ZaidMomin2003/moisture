@@ -5,43 +5,19 @@ import { GrainAnalyzerDashboard, type DeviceStatus, type MeasurementState } from
 import { AppLogo, LoadingSpinner } from '@/components/icons';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Cpu, CheckCircle2, WifiOff, Settings, TestTube2 } from 'lucide-react';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+import { Cpu, CheckCircle2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 
 export default function Home() {
-  const [deviceStatus, setDeviceStatus] = useState<DeviceStatus>('disconnected');
+  const [deviceStatus, setDeviceStatus] = useState<DeviceStatus>('connected');
   const [measurementState, setMeasurementState] = useState<MeasurementState>('idle');
-  const [isSimulated, setIsSimulated] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
     setIsClient(true);
   }, []);
-
-  const handleConnectDevice = (simulated: boolean) => {
-    setIsSimulated(simulated);
-    if (simulated) {
-      setDeviceStatus('connecting');
-      setTimeout(() => {
-        setDeviceStatus('connected');
-      }, 1500);
-    } else {
-      router.push('/connect');
-    }
-  };
 
   const handleMeasure = () => {
     if (measurementState === 'measuring' || deviceStatus !== 'connected') return;
@@ -52,53 +28,6 @@ export default function Home() {
     }, 10000);
   };
 
-  const ConnectButton = () => {
-    switch (deviceStatus) {
-      case 'connected':
-        return (
-          <Button disabled className="bg-green-600 hover:bg-green-700 text-white font-semibold">
-            <CheckCircle2 /> Connected
-          </Button>
-        );
-      case 'connecting':
-        return (
-          <Button disabled>
-            <LoadingSpinner /> Connecting...
-          </Button>
-        );
-      case 'disconnected':
-      default:
-        return (
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="destructive" className="bg-red-600 hover:bg-red-700 text-white font-semibold">
-                <WifiOff /> Connect Device
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Choose Connection Method</AlertDialogTitle>
-                <AlertDialogDescription>
-                  You can connect to a physical GrainScan sensor or use simulated data for demonstration purposes.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <AlertDialogAction onClick={() => handleConnectDevice(false)} className='h-20 flex flex-col'>
-                  <Settings className='h-6 w-6 mb-2' />
-                  <span className='font-bold text-md'>Connect to Real Sensor</span>
-                  <span className='font-normal text-xs text-primary-foreground/80'>Listen for data from a physical device.</span>
-                </AlertDialogAction>
-                <AlertDialogAction onClick={() => handleConnectDevice(true)} className='h-20 flex flex-col'>
-                  <TestTube2 className='h-6 w-6 mb-2' />
-                  <span className='font-bold text-md'>Use Simulated Data</span>
-                  <span className='font-normal text-xs text-primary-foreground/80'>Generate random measurements for demo.</span>
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        );
-    }
-  };
 
 
   return (
@@ -112,15 +41,18 @@ export default function Home() {
             </span>
           </div>
           <div className='flex items-center gap-4'>
-            {/* Minimal header as buttons are now in the Hero section */}
           </div>
         </div>
       </header>
 
       <section className="relative w-full py-12 md:py-20 overflow-hidden bg-slate-950">
-        <div className="absolute inset-0 opacity-40">
-          {/* In a real environment, you'd use the generated image here. For now, we use a beautiful gradient pattern */}
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-primary/30 via-slate-900 to-slate-950"></div>
+        <div className="absolute inset-0">
+          <img
+            src="https://images.unsplash.com/photo-1542273917363-3b1817f69a2d?q=80&w=2074&auto=format&fit=crop"
+            alt="Farm Field Background"
+            className="object-cover w-full h-full opacity-60"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/80 to-transparent"></div>
           <div className="absolute inset-0 bg-[grid-line:rgba(255,255,255,0.05)_1px_transparent_0] [background-size:40px_40px]"></div>
         </div>
 
@@ -137,11 +69,10 @@ export default function Home() {
               Precision moisture analysis meets advanced AI. Get laboratory-grade insights directly from your field with our integrated sensor-to-cloud ecosystem.
             </p>
             <div className='flex flex-wrap gap-4'>
-              {isClient && <ConnectButton />}
               <Button
                 onClick={handleMeasure}
                 size="lg"
-                disabled={measurementState === 'measuring' || !isClient || deviceStatus !== 'connected'}
+                disabled={measurementState === 'measuring' || !isClient}
                 className="font-bold text-lg px-8 h-14 shadow-lg shadow-primary/20"
               >
                 {measurementState === 'measuring' ? <><LoadingSpinner /> Analyzing...</> : <><Cpu className="scale-125" /> Take Measurement</>}
@@ -160,7 +91,6 @@ export default function Home() {
           <GrainAnalyzerDashboard
             deviceStatus={deviceStatus}
             measurementState={measurementState}
-            isSimulated={isSimulated}
           />
         </div>
       </main>

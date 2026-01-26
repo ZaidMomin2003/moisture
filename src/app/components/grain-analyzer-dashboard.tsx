@@ -4,12 +4,12 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { WheatIcon, RiceIcon, MaizeIcon, LoadingSpinner } from '@/components/icons';
 import { cn } from '@/lib/utils';
-import { CheckCircle2, Info, XCircle, Cloud, Droplets, Thermometer, TrendingDown, Wind } from 'lucide-react';
+import { CheckCircle2, Info, XCircle, Cloud, Droplets, Thermometer, TrendingDown, Wind, MapPin } from 'lucide-react';
 import { RealTimeMoistureChart, type MoistureReading } from './real-time-moisture-chart';
 import { getHarvestAdvice } from '@/ai/flows/harvest-advisor-flow';
 import type { HarvestAdvice } from '@/ai/flows/harvest-advisor-shared';
 import { useToast } from '@/hooks/use-toast';
-import { db, doc, onSnapshot, mapRawToMoisture } from '@/lib/firebase';
+import { fetchWeatherData, type WeatherData } from '@/lib/weather-forecast';
 
 export type GrainType = 'Rice' | 'Wheat' | 'Maize';
 export type MeasurementState = 'idle' | 'measuring' | 'done';
@@ -27,7 +27,7 @@ const grains = [
   { name: 'Maize', icon: MaizeIcon },
 ] as const;
 
-export function GrainAnalyzerDashboard({ deviceStatus, measurementState, isSimulated }: { deviceStatus: DeviceStatus, measurementState: MeasurementState, isSimulated: boolean }) {
+export function GrainAnalyzerDashboard({ deviceStatus, measurementState }: { deviceStatus: DeviceStatus, measurementState: MeasurementState }) {
   const [selectedGrain, setSelectedGrain] = useState<GrainType>('Wheat');
   const [moisture, setMoisture] = useState<number | null>(null);
   const [isClient, setIsClient] = useState(false);
@@ -36,10 +36,33 @@ export function GrainAnalyzerDashboard({ deviceStatus, measurementState, isSimul
   const [advisorStatus, setAdvisorStatus] = useState<'idle' | 'loading' | 'done'>('idle');
   const [advice, setAdvice] = useState<HarvestAdvice>({ status: 'caution', title: 'Awaiting results', suggestion: 'Complete a measurement to get advice.' });
   const [liveMoistureData, setLiveMoistureData] = useState<MoistureReading[]>([]);
+  const [weather, setWeather] = useState<WeatherData | null>(null);
+  const [weatherLoading, setWeatherLoading] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     setIsClient(true);
+
+
+    if (navigator.geolocation) {
+      setWeatherLoading(true);
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          try {
+            const data = await fetchWeatherData(position.coords.latitude, position.coords.longitude);
+            setWeather(data);
+          } catch (error) {
+            console.error('Weather fetch error:', error);
+          } finally {
+            setWeatherLoading(false);
+          }
+        },
+        (error) => {
+          console.error('Geolocation error:', error);
+          setWeatherLoading(false);
+        }
+      );
+    }
   }, []);
 
   useEffect(() => {
@@ -78,52 +101,54 @@ export function GrainAnalyzerDashboard({ deviceStatus, measurementState, isSimul
       setAdvisorStatus('idle');
       setAdvice({ status: 'caution', title: 'Awaiting results', suggestion: 'Complete a measurement to get advice.' });
 
-      // Use the prop passed from the parent to determine which data source to use
-      if (isSimulated) {
-        let time = 0;
-        const baseMoisture = selectedGrain === 'Rice' ? 12 : selectedGrain === 'Wheat' ? 14 : 18;
+      // LOCAL API MODE - Poll the internal /api/sensor endpoint
+      let time = 0;
+      let sum = 0;
 
-        const interval = setInterval(() => {
-          time++;
-          const randomFluctuation = (Math.random() - 0.5) * 0.4;
-          const trend = Math.sin(time / 3) * 0.5;
-          const newMoisture = baseMoisture + trend + randomFluctuation;
-          const reading = { time, moisture: parseFloat(newMoisture.toFixed(1)) };
+      const interval = setInterval(async () => {
+        try {
+          const res = await fetch('/api/sensor');
+          const data = await res.json();
 
-          setLiveMoistureData(prev => [...prev.slice(-29), reading]);
-          setMoisture(reading.moisture);
+          if (data && typeof data.rawValue === 'number') {
+            // Only process if the reading is recent (within last 30 seconds) 
+            // to avoid using stale data if the device is off
+            const isRecent = (Date.now() - data.timestamp) < 30000;
 
-          if (time >= 10) {
-            clearInterval(interval);
-            const finalMeasurement = { grain: selectedGrain, moisture: reading.moisture, timestamp: new Date() };
-            setPastMeasurements(prev => [finalMeasurement, ...prev]);
-          }
-        }, 1000);
-        return () => clearInterval(interval);
-      } else {
-        // REAL DATA MODE
-        let time = 0;
-        const unsub = onSnapshot(doc(db, 'live_reading', 'device_A4B2'), (doc) => {
-          const data = doc.data();
-          if (data && data.rawValue) {
-            time++;
-            const moistureValue = mapRawToMoisture(Number(data.rawValue.integerValue || data.rawValue));
-            const reading = { time, moisture: moistureValue };
+            if (isRecent) {
+              time++;
+              const moistureValue = mapRawToMoisture(data.rawValue);
+              const reading = { time, moisture: moistureValue };
+              sum += moistureValue;
 
-            setLiveMoistureData(prev => [...prev.slice(-29), reading]);
-            setMoisture(reading.moisture);
+              setLiveMoistureData(prev => [...prev.slice(-29), reading]);
+              setMoisture(reading.moisture);
 
-            if (time >= 8) { // After 8 ticks, consider it a stable reading
-              unsub();
-              const finalMeasurement = { grain: selectedGrain, moisture: reading.moisture, timestamp: new Date() };
-              setPastMeasurements(prev => [finalMeasurement, ...prev]);
+              if (time >= 6) {
+                clearInterval(interval);
+                const averageMoisture = parseFloat((sum / 6).toFixed(1));
+                setMoisture(averageMoisture);
+                const finalMeasurement = { grain: selectedGrain, moisture: averageMoisture, timestamp: new Date() };
+                setPastMeasurements(prev => [finalMeasurement, ...prev]);
+              }
             }
           }
-        });
-        return () => unsub();
-      }
+        } catch (err) {
+          console.error("Failed to fetch local sensor data:", err);
+        }
+      }, 1000); // Poll every second
+
+      return () => clearInterval(interval);
     }
   }, [measurementState, selectedGrain]);
+
+  // Helper function to map raw values (duplicated here to remove dependency on firebase.ts)
+  const mapRawToMoisture = (raw: number) => {
+    const dry = 3200;
+    const wet = 1500;
+    let moisture = ((dry - raw) / (dry - wet)) * 100;
+    return Math.min(Math.max(parseFloat(moisture.toFixed(1)), 0), 100);
+  };
 
 
   const handleSelectGrain = (grain: GrainType) => {
@@ -167,18 +192,26 @@ export function GrainAnalyzerDashboard({ deviceStatus, measurementState, isSimul
 
         <Card className="overflow-hidden border-none shadow-xl bg-gradient-to-br from-primary/10 via-background to-accent/20">
           <CardHeader className="relative z-10">
-            <CardTitle className="text-2xl font-bold flex items-center gap-2">
-              <Cloud className="text-primary" />
-              Quick Field Insights
+            <CardTitle className="text-2xl font-bold flex flex-col sm:flex-row sm:items-center gap-2">
+              <div className="flex items-center gap-2">
+                <Cloud className="text-primary" />
+                Quick Field Insights
+              </div>
+              {weather?.locationName && (
+                <div className="flex items-center gap-1 text-sm font-normal text-muted-foreground bg-background/50 px-2 py-0.5 rounded-full border border-primary/10">
+                  <MapPin className="h-3 w-3 text-primary" />
+                  {weather.locationName}
+                </div>
+              )}
             </CardTitle>
             <CardDescription>Real-time environmental conditions for your {selectedGrain} crops.</CardDescription>
           </CardHeader>
           <CardContent className="relative z-10">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
-                { label: 'Air Temp', value: '24°C', icon: Thermometer, color: 'text-orange-500' },
-                { label: 'Humidity', value: '62%', icon: Droplets, color: 'text-blue-500' },
-                { label: 'Wind Speed', value: '12km/h', icon: Wind, color: 'text-green-500' },
+                { label: 'Air Temp', value: weather ? `${weather.temperature}°C` : (weatherLoading ? '...' : '--'), icon: Thermometer, color: 'text-orange-500' },
+                { label: 'Humidity', value: weather ? `${weather.humidity}%` : (weatherLoading ? '...' : '--'), icon: Droplets, color: 'text-blue-500' },
+                { label: 'Wind Speed', value: weather ? `${weather.windSpeed}km/h` : (weatherLoading ? '...' : '--'), icon: Wind, color: 'text-green-500' },
                 { label: 'Soil Health', value: 'Optimal', icon: TrendingDown, color: 'text-primary' },
               ].map((stat) => (
                 <div key={stat.label} className="flex flex-col items-center justify-center p-4 bg-background/60 backdrop-blur-sm rounded-xl border border-primary/10">
@@ -192,10 +225,12 @@ export function GrainAnalyzerDashboard({ deviceStatus, measurementState, isSimul
             <div className="mt-8 p-6 rounded-2xl bg-primary/5 border border-primary/20 flex items-center justify-between">
               <div>
                 <h3 className="font-bold text-lg">Next Rain Predicted</h3>
-                <p className="text-sm text-muted-foreground">Approx. 48 hours from now (Light Showers)</p>
+                <p className="text-sm text-muted-foreground">
+                  {weather ? (weather.rainProbability > 20 ? `High chance within 24h (${weather.rainProbability}%)` : `Low chance (${weather.rainProbability}%)`) : "Calculating probability..."}
+                </p>
               </div>
               <div className="text-right">
-                <span className="text-3xl font-bold text-primary">80%</span>
+                <span className="text-3xl font-bold text-primary">{weather ? `${weather.rainProbability}%` : '--'}</span>
                 <p className="text-[10px] text-muted-foreground uppercase">Confidence</p>
               </div>
             </div>
