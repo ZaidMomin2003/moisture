@@ -63,7 +63,7 @@ export default function Home() {
               Powered by Gemma 3:1B & ESP32
             </div>
             <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-white mb-6">
-              The Future of <span className="text-primary italic">Smart Harvesting</span>
+              The Future of <span className="text-primary italic">Smart Grain Moisture Analyzer</span>
             </h1>
             <p className="text-xl text-slate-400 max-w-xl mb-10 leading-relaxed">
               Precision moisture analysis meets advanced AI. Get laboratory-grade insights directly from your field with our integrated sensor-to-cloud ecosystem.

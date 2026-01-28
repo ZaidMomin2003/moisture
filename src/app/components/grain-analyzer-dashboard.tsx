@@ -209,10 +209,10 @@ export function GrainAnalyzerDashboard({ deviceStatus, measurementState }: { dev
           <CardContent className="relative z-10">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
-                { label: 'Air Temp', value: weather ? `${weather.temperature}°C` : (weatherLoading ? '...' : '--'), icon: Thermometer, color: 'text-orange-500' },
+                { label: 'Temperature', value: weather ? `${weather.temperature}°C` : (weatherLoading ? '...' : '--'), icon: Thermometer, color: 'text-orange-500' },
                 { label: 'Humidity', value: weather ? `${weather.humidity}%` : (weatherLoading ? '...' : '--'), icon: Droplets, color: 'text-blue-500' },
                 { label: 'Wind Speed', value: weather ? `${weather.windSpeed}km/h` : (weatherLoading ? '...' : '--'), icon: Wind, color: 'text-green-500' },
-                { label: 'Soil Health', value: 'Optimal', icon: TrendingDown, color: 'text-primary' },
+                { label: 'Grain Health', value: 'Optimal', icon: TrendingDown, color: 'text-primary' },
               ].map((stat) => (
                 <div key={stat.label} className="flex flex-col items-center justify-center p-4 bg-background/60 backdrop-blur-sm rounded-xl border border-primary/10">
                   <stat.icon className={cn("h-6 w-6 mb-2", stat.color)} />
@@ -301,7 +301,7 @@ const HarvestAdvisorCard = ({ status, title, suggestion }: { status: 'good' | 'c
   return (
     <Card className="bg-background">
       <CardHeader>
-        <CardTitle>Harvest Advisor</CardTitle>
+        <CardTitle>AI Moisture advisor</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="flex items-start gap-4">

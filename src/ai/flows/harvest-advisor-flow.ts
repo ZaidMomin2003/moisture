@@ -28,13 +28,13 @@ const harvestAdvisorFlow = ai.defineFlow(
         EXAMPLE RESPONSE:
         {
           "status": "good",
-          "title": "Ready for Harvest",
-          "suggestion": "The moisture level is perfect. You should proceed with harvesting immediately to ensure best quality."
+          "title": "Ready for Storage",
+          "suggestion": "The moisture level is perfect. You should proceed with storage immediately to ensure best quality."
         }
 
         RESPONSE INSTRUCTIONS:
         1. Return ONLY the JSON object.
-        2. You MUST include the "suggestion" field with at least 2 sentences of advice.
+        2. You MUST include the "suggestion" field with at least 2 sentences of advice regarding storage.
         3. Do not include any other text.
       `,
       output: {
