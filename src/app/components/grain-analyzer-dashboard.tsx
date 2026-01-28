@@ -22,9 +22,9 @@ type Measurement = {
 };
 
 const grains = [
-  { name: 'Rice', icon: RiceIcon },
-  { name: 'Wheat', icon: WheatIcon },
-  { name: 'Maize', icon: MaizeIcon },
+  { name: 'Rice', icon: RiceIcon, threshold: 'Safe: <14%' },
+  { name: 'Wheat', icon: WheatIcon, threshold: 'Safe: <13.5%' },
+  { name: 'Maize', icon: MaizeIcon, threshold: 'Safe: <15.5%' },
 ] as const;
 
 export function GrainAnalyzerDashboard({ deviceStatus, measurementState }: { deviceStatus: DeviceStatus, measurementState: MeasurementState }) {
@@ -183,7 +183,10 @@ export function GrainAnalyzerDashboard({ deviceStatus, measurementState }: { dev
                   disabled={measurementState === 'measuring'}
                 >
                   <grain.icon className="h-10 w-10 text-primary" />
-                  <span className="font-semibold text-lg text-foreground">{grain.name}</span>
+                  <div className="text-center">
+                    <span className="font-semibold text-lg text-foreground block">{grain.name}</span>
+                    <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">{grain.threshold}</span>
+                  </div>
                 </button>
               ))}
             </div>
@@ -222,18 +225,6 @@ export function GrainAnalyzerDashboard({ deviceStatus, measurementState }: { dev
               ))}
             </div>
 
-            <div className="mt-8 p-6 rounded-2xl bg-primary/5 border border-primary/20 flex items-center justify-between">
-              <div>
-                <h3 className="font-bold text-lg">Next Rain Predicted</h3>
-                <p className="text-sm text-muted-foreground">
-                  {weather ? (weather.rainProbability > 20 ? `High chance within 24h (${weather.rainProbability}%)` : `Low chance (${weather.rainProbability}%)`) : "Calculating probability..."}
-                </p>
-              </div>
-              <div className="text-right">
-                <span className="text-3xl font-bold text-primary">{weather ? `${weather.rainProbability}%` : '--'}</span>
-                <p className="text-[10px] text-muted-foreground uppercase">Confidence</p>
-              </div>
-            </div>
           </CardContent>
         </Card>
       </div>
@@ -261,7 +252,6 @@ export function GrainAnalyzerDashboard({ deviceStatus, measurementState }: { dev
 
                 <p className="text-5xl font-bold text-foreground leading-tight">
                   {moisture.toFixed(1)}
-                  <span className="text-3xl text-muted-foreground/50">%</span>
                 </p>
                 <p className="font-semibold text-lg text-muted-foreground">{selectedGrain}</p>
               </div>

@@ -12,30 +12,26 @@ const harvestAdvisorFlow = ai.defineFlow(
   async (input) => {
     const { output } = await ai.generate({
       model: 'ollama/gemma3:1b',
-      system: 'You are a helpful assistant that always responds with valid, flat JSON objects. Do not include any explanation or schema wrappers. Always include all three fields: "status", "title", and "suggestion".',
+      system: 'You are an expert post-harvest storage consultant. You always respond with a valid, flat JSON object containing "status", "title", and "suggestion". Do not include any extra text.',
       prompt: `
-        You are an expert agronomist. Provide advice based on grain moisture.
+        Analyze the storage safety of ${input.grainType} with ${input.moisture}% moisture content.
         
-        DATA:
-        - Grain Type: ${input.grainType}
-        - Moisture Content: ${input.moisture}%
-
-        RULES:
-        - Wheat: Ideal <13.5%, Caution <15.5%, Bad >15.5%
-        - Rice: Ideal <14%, Caution <16%, Bad >16%
-        - Maize: Ideal <15.5%, Caution <18%, Bad >18%
-
-        EXAMPLE RESPONSE:
-        {
-          "status": "good",
-          "title": "Ready for Storage",
-          "suggestion": "The moisture level is perfect. You should proceed with storage immediately to ensure best quality."
-        }
+        STORAGE SAFETY RULES:
+        - Wheat: Safe <13.5%, Risky <15.5%, Dangerous >15.5% (Mold Risk)
+        - Rice: Safe <14%, Risky <16%, Dangerous >16% (Heating/Spoilage)
+        - Maize: Safe <15.5%, Risky <18%, Dangerous >18% (Aflatoxin/Fungal Risk)
 
         RESPONSE INSTRUCTIONS:
-        1. Return ONLY the JSON object.
-        2. You MUST include the "suggestion" field with at least 2 sentences of advice regarding storage.
-        3. Do not include any other text.
+        1. "status": Use "good" (safe), "caution" (risky), or "bad" (dangerous).
+        2. "title": Concise summary (e.g., "Safe for Long-Term Storage").
+        3. "suggestion": Provide 2-3 specific sentences about storage longevity, aeration needs, and moisture-related risks. Focus ONLY on storage, not harvesting.
+
+        EXAMPLE:
+        {
+          "status": "bad",
+          "title": "High Spoilage Risk",
+          "suggestion": "This moisture level is too high for safe storage and will lead to rapid fungal growth and heating. You must dry the grain further or implement vigorous mechanical aeration immediately."
+        }
       `,
       output: {
         schema: HarvestAdviceSchema,
