@@ -142,12 +142,15 @@ export function GrainAnalyzerDashboard({ deviceStatus, measurementState }: { dev
     }
   }, [measurementState, selectedGrain]);
 
-  // Helper function to map raw values (duplicated here to remove dependency on firebase.ts)
   const mapRawToMoisture = (raw: number) => {
     const dry = 3200;
     const wet = 1500;
+
     let moisture = ((dry - raw) / (dry - wet)) * 100;
-    return Math.min(Math.max(parseFloat(moisture.toFixed(1)), 0), 100);
+
+    // Scale strictly between 1 and 100
+    // If moisture is < 1, return 1. If > 100, return 100.
+    return Math.min(Math.max(parseFloat(moisture.toFixed(1)), 1), 100);
   };
 
 

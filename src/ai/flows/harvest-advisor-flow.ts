@@ -12,26 +12,28 @@ const harvestAdvisorFlow = ai.defineFlow(
   async (input) => {
     const { output } = await ai.generate({
       model: 'ollama/gemma3:1b',
-      system: 'You are an expert post-harvest storage consultant. You always respond with a valid, flat JSON object containing "status", "title", and "suggestion". Do not include any extra text.',
+      system: 'You are an expert post-harvest storage consultant. You MUST return ONLY a JSON object. NEVER return a schema definition. Always use exactly these keys: "status", "title", "suggestion".',
       prompt: `
-        Analyze the storage safety of ${input.grainType} with ${input.moisture}% moisture content.
-        
+        Analyze the storage safety for:
+        - Grain: ${input.grainType}
+        - Moisture: ${input.moisture}%
+
         STORAGE SAFETY RULES:
-        - Wheat: Safe <13.5%, Risky <15.5%, Dangerous >15.5% (Mold Risk)
-        - Rice: Safe <14%, Risky <16%, Dangerous >16% (Heating/Spoilage)
-        - Maize: Safe <15.5%, Risky <18%, Dangerous >18% (Aflatoxin/Fungal Risk)
+        - Wheat: Safe <13.5, Risky <15.5, Dangerous >15.5
+        - Rice: Safe <14, Risky <16, Dangerous >16
+        - Maize: Safe <15.5, Risky <18, Dangerous >18
 
-        RESPONSE INSTRUCTIONS:
-        1. "status": Use "good" (safe), "caution" (risky), or "bad" (dangerous).
-        2. "title": Concise summary (e.g., "Safe for Long-Term Storage").
-        3. "suggestion": Provide 2-3 specific sentences about storage longevity, aeration needs, and moisture-related risks. Focus ONLY on storage, not harvesting.
-
-        EXAMPLE:
+        RESPONSE FORMAT:
         {
-          "status": "bad",
-          "title": "High Spoilage Risk",
-          "suggestion": "This moisture level is too high for safe storage and will lead to rapid fungal growth and heating. You must dry the grain further or implement vigorous mechanical aeration immediately."
+          "status": "good" | "caution" | "bad",
+          "title": "Short summary",
+          "suggestion": "2-3 sentences of specific advice."
         }
+
+        STRICT RULES:
+        1. Return ONLY the JSON instance.
+        2. DO NOT include "type": "object" or any schema properties.
+        3. Start your response with { and end with }.
       `,
       output: {
         schema: HarvestAdviceSchema,
